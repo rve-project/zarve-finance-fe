@@ -76,7 +76,7 @@ export default function VehicleProfitabilityPage() {
       </p>
 
       {data && data.vehicles.length > 0 && (
-        <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           <p className="mb-4 text-sm font-semibold text-zinc-700">{t("vehicleProfitability.top10Title")}</p>
           {(() => {
             const top = [...data.vehicles].sort((a, b) => b.profit - a.profit).slice(0, 10).reverse();

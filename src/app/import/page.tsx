@@ -71,7 +71,7 @@ export default function ImportPage() {
         subtitle={t("import.subtitle")}
       />
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6">
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6">
         <p className="mb-4 text-sm text-zinc-500">
           {t("import.description")}
         </p>
@@ -124,7 +124,7 @@ export default function ImportPage() {
             </>
           )}
           {mirrorStatus?.status === "error" && (
-            <div className="col-span-3">
+            <div className="col-span-2 sm:col-span-3">
               <p className="text-red-400">{t("import.lastError")}</p>
               <p className="font-medium text-red-600">{mirrorStatus.errorMessage}</p>
             </div>

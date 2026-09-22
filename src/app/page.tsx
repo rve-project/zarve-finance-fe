@@ -265,7 +265,7 @@ export default function HomePage() {
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 lg:col-span-2">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 lg:col-span-2">
           <p className="mb-4 text-sm font-semibold text-zinc-700">{t("home.dailyTrend")}</p>
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={stats?.dailyTrend ?? []} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
@@ -290,7 +290,7 @@ export default function HomePage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           <SegmentedBar
             title={t("home.evVsFuel")}
             segments={[
@@ -339,7 +339,7 @@ export default function HomePage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-semibold text-zinc-700">{t("home.topVehicles")}</p>
             <Link href="/reports/vehicle-profitability" className="text-xs font-medium text-emerald-600 hover:underline">
@@ -357,7 +357,7 @@ export default function HomePage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-semibold text-zinc-700">{t("home.topDrivers")}</p>
             <Link href="/revenue-recap" className="text-xs font-medium text-emerald-600 hover:underline">

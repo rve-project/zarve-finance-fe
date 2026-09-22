@@ -84,7 +84,7 @@ export default function TrialBalancePage() {
       </div>
 
       {activeRows.length > 0 && (
-        <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-zinc-700">{t("trialBalance.chartTitle")}</p>
             <div className="flex flex-wrap gap-3 text-xs text-zinc-500">

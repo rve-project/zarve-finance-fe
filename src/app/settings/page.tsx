@@ -67,7 +67,7 @@ export default function SettingsPage() {
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
           {saved && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{t("settings.saved")}</p>}
 
-          <section className="relative z-40 rounded-xl border border-zinc-200 bg-white p-5">
+          <section className="relative z-40 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
             <h2 className="mb-1 text-sm font-semibold text-zinc-800">{t("settings.incomeAccountSectionTitle")}</h2>
             <p className="mb-3 text-xs text-zinc-500">{t("settings.incomeAccountDesc")}</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -90,7 +90,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-5">
+          <section className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
             <h2 className="mb-3 text-sm font-semibold text-zinc-800">{t("settings.syncOptionsTitle")}</h2>
             <label className="flex cursor-pointer items-start gap-3">
               <input
@@ -106,7 +106,7 @@ export default function SettingsPage() {
             </label>
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-5">
+          <section className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
             <h2 className="mb-3 text-sm font-semibold text-zinc-800">{t("settings.ppnSectionTitle")}</h2>
             <label className="mb-3 flex cursor-pointer items-start gap-3">
               <input

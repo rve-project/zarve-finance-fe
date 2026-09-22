@@ -72,7 +72,7 @@ export default function AgedReceivablesPage() {
 
       {data && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-5">
+          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             <StatTile icon={AlertTriangle} iconClass="bg-emerald-50 text-emerald-600" label={t(BUCKET_LABEL_KEY.current)} value={formatRupiah(data.totals.current)} />
             <StatTile icon={AlertTriangle} iconClass="bg-amber-50 text-amber-600" label={t(BUCKET_LABEL_KEY.d1to30)} value={formatRupiah(data.totals.d1to30)} />
             <StatTile icon={AlertTriangle} iconClass="bg-orange-50 text-orange-600" label={t(BUCKET_LABEL_KEY.d31to60)} value={formatRupiah(data.totals.d31to60)} />
@@ -81,8 +81,8 @@ export default function AgedReceivablesPage() {
           </div>
 
           {data.partners.length > 0 && (
-            <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <p className="text-sm font-semibold text-zinc-700">{t("agedReceivables.top10Title")}</p>
                 <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
                   {(Object.keys(BUCKET_LABEL_KEY) as (keyof typeof BUCKET_COLOR)[]).map((k) => (

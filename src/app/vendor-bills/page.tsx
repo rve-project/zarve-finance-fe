@@ -160,7 +160,7 @@ export default function VendorBillsPage() {
       {error && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="relative z-40 mb-6 rounded-xl border border-zinc-200 bg-white p-5">
+        <form onSubmit={handleSubmit} className="relative z-40 mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap gap-3">
             <label className="text-sm">
               <span className="mb-1 block text-zinc-600">{t("vendorBills.form.vendorLabel")}</span>
@@ -178,35 +178,37 @@ export default function VendorBillsPage() {
 
           <div className="mb-3 space-y-2">
             {lines.map((line, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex flex-col gap-2 rounded-lg border border-zinc-100 p-2 sm:flex-row sm:items-center sm:border-0 sm:p-0">
                 <input
                   placeholder={t("vendorBills.form.descriptionPlaceholder")}
                   value={line.description}
                   onChange={(e) => updateLine(i, { description: e.target.value })}
-                  className="flex-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm"
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-1.5 text-sm sm:flex-1"
                 />
-                <Dropdown
-                  className="min-w-[220px]"
-                  value={line.accountId}
-                  onChange={(v) => updateLine(i, { accountId: v })}
-                  options={expenseOptions}
-                  placeholder={t("vendorBills.form.accountPlaceholder")}
-                />
-                <input
-                  type="number"
-                  placeholder={t("vendorBills.form.amountPlaceholder")}
-                  value={line.amount}
-                  onChange={(e) => updateLine(i, { amount: e.target.value })}
-                  className="w-36 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-right"
-                />
-                <button
-                  type="button"
-                  onClick={() => setLines((prev) => prev.filter((_, idx) => idx !== i))}
-                  disabled={lines.length <= 1}
-                  className="rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <Dropdown
+                    className="min-w-0 flex-1 sm:min-w-[220px] sm:flex-none"
+                    value={line.accountId}
+                    onChange={(v) => updateLine(i, { accountId: v })}
+                    options={expenseOptions}
+                    placeholder={t("vendorBills.form.accountPlaceholder")}
+                  />
+                  <input
+                    type="number"
+                    placeholder={t("vendorBills.form.amountPlaceholder")}
+                    value={line.amount}
+                    onChange={(e) => updateLine(i, { amount: e.target.value })}
+                    className="w-24 shrink-0 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-right sm:w-36"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setLines((prev) => prev.filter((_, idx) => idx !== i))}
+                    disabled={lines.length <= 1}
+                    className="shrink-0 rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -253,25 +255,33 @@ export default function VendorBillsPage() {
                 <td className="px-4 py-2.5 text-right">{formatRupiah(b.totalAmount)}</td>
                 <td className="px-4 py-2.5 text-right">
                   {payingBillId === b.id ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <Dropdown className="min-w-[160px]" value={payBankAccountId} onChange={setPayBankAccountId} options={bankOptions} placeholder={t("vendorBills.pay.bankPlaceholder")} />
+                    <div className="flex flex-col items-stretch gap-2 text-left sm:flex-row sm:items-center sm:justify-end sm:text-right">
+                      <Dropdown
+                        className="w-full sm:min-w-[160px] sm:w-auto"
+                        value={payBankAccountId}
+                        onChange={setPayBankAccountId}
+                        options={bankOptions}
+                        placeholder={t("vendorBills.pay.bankPlaceholder")}
+                      />
                       <input
                         type="number"
                         value={payAmount}
                         onChange={(e) => setPayAmount(e.target.value)}
-                        className="w-28 rounded-lg border border-zinc-200 px-2 py-1 text-sm text-right"
+                        className="w-full rounded-lg border border-zinc-200 px-2 py-1 text-sm text-right sm:w-28"
                       />
                       <DatePicker value={payDate} onChange={setPayDate} maxDate={today()} />
-                      <button
-                        onClick={() => handlePay(b)}
-                        disabled={paying || !payBankAccountId}
-                        className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                      >
-                        {paying ? t("vendorBills.pay.processing") : t("vendorBills.pay.submitButton")}
-                      </button>
-                      <button onClick={() => setPayingBillId(null)} className="text-xs text-zinc-500 hover:underline">
-                        {t("vendorBills.pay.cancel")}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handlePay(b)}
+                          disabled={paying || !payBankAccountId}
+                          className="flex-1 rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:flex-none"
+                        >
+                          {paying ? t("vendorBills.pay.processing") : t("vendorBills.pay.submitButton")}
+                        </button>
+                        <button onClick={() => setPayingBillId(null)} className="shrink-0 text-xs text-zinc-500 hover:underline">
+                          {t("vendorBills.pay.cancel")}
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <button onClick={() => startPay(b)} className="text-xs font-medium text-emerald-600 hover:underline">

@@ -179,7 +179,7 @@ function InvoicesPageInner() {
           />
           <StatTile icon={Wallet} iconClass="bg-emerald-50 text-emerald-600" label={t("invoices.collected")} value={formatRupiah(totalTertagih)} />
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 lg:col-span-2">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 lg:col-span-2">
           <p className="mb-3 text-sm font-semibold text-zinc-700">{t("invoices.statusComposition")}</p>
           <ResponsiveContainer width="100%" height={Math.max(140, statusChartData.length * 32)}>
             <BarChart data={statusChartData} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 0 }}>

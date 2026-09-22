@@ -265,7 +265,7 @@ export default function RevenueRecapPage() {
 
       {data && (
         <>
-          <div className="mb-4 flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-4">
+          <div className="mb-4 flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-zinc-500">
                 {data.categoryName} &middot; {data.rows.length} {t("revenueRecap.rows")}
@@ -281,11 +281,11 @@ export default function RevenueRecapPage() {
               </p>
             </div>
             <div className="flex items-start gap-6">
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-sm text-zinc-500">{t("home.totalRevenue")}</p>
                 <p className="text-xl font-bold text-emerald-600">{formatRupiah(grandTotal)}</p>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <p className="text-sm text-zinc-500">{t("revenueRecap.geofencePenalty")}</p>
                 <p className="text-xl font-bold text-rose-600">{formatRupiah(grandTotalKeluarKota)}</p>
               </div>

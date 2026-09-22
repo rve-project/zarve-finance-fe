@@ -82,9 +82,14 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       <aside className="hidden w-64 shrink-0 flex-col border-r border-zinc-200 bg-white md:flex print:hidden">{content}</aside>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 md:hidden print:hidden">
+        // z-[100]/z-[110]: deliberately far above any in-page z-index (filter bars use
+        // z-40, dropdown/date-picker popovers and tooltips use z-50) so the mobile menu
+        // always wins the stack regardless of what a given page does internally --
+        // matching z-40 here once let a page's filter bar visually poke through the
+        // open drawer.
+        <div className="fixed inset-0 z-[100] md:hidden print:hidden">
           <div className="fixed inset-0 bg-black/30" onClick={onClose} />
-          <aside className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl">
+          <aside className="fixed inset-y-0 left-0 z-[110] flex w-72 max-w-[85vw] flex-col bg-white shadow-xl">
             {content}
           </aside>
         </div>

@@ -146,7 +146,7 @@ export default function JournalEntriesPage() {
       />
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="relative z-40 mb-6 rounded-xl border border-zinc-200 bg-white p-5">
+        <form onSubmit={handleSubmit} className="relative z-40 mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           {error && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
 
           <div className="mb-4 flex flex-wrap gap-3">
@@ -171,36 +171,38 @@ export default function JournalEntriesPage() {
 
           <div className="mb-3 space-y-2">
             {lines.map((line, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex flex-col gap-2 rounded-lg border border-zinc-100 p-2 sm:flex-row sm:items-center sm:border-0 sm:p-0">
                 <Dropdown
-                  className="min-w-[260px] flex-1"
+                  className="w-full sm:min-w-[260px] sm:flex-1"
                   value={line.accountId}
                   onChange={(v) => updateLine(i, { accountId: v })}
                   options={accountOptions}
                   placeholder={t("journalEntries.form.accountPlaceholder")}
                 />
-                <input
-                  type="number"
-                  placeholder={t("journalEntries.form.debitPlaceholder")}
-                  value={line.debit}
-                  onChange={(e) => updateLine(i, { debit: e.target.value, credit: e.target.value ? "" : line.credit })}
-                  className="w-32 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-right"
-                />
-                <input
-                  type="number"
-                  placeholder={t("journalEntries.form.creditPlaceholder")}
-                  value={line.credit}
-                  onChange={(e) => updateLine(i, { credit: e.target.value, debit: e.target.value ? "" : line.debit })}
-                  className="w-32 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-right"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeLine(i)}
-                  disabled={lines.length <= 2}
-                  className="rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    placeholder={t("journalEntries.form.debitPlaceholder")}
+                    value={line.debit}
+                    onChange={(e) => updateLine(i, { debit: e.target.value, credit: e.target.value ? "" : line.credit })}
+                    className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-right sm:w-32 sm:flex-none"
+                  />
+                  <input
+                    type="number"
+                    placeholder={t("journalEntries.form.creditPlaceholder")}
+                    value={line.credit}
+                    onChange={(e) => updateLine(i, { credit: e.target.value, debit: e.target.value ? "" : line.debit })}
+                    className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-right sm:w-32 sm:flex-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeLine(i)}
+                    disabled={lines.length <= 2}
+                    className="shrink-0 rounded-lg p-2 text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -209,7 +211,7 @@ export default function JournalEntriesPage() {
             <Plus className="h-4 w-4" /> {t("journalEntries.form.addLine")}
           </button>
 
-          <div className="mb-4 flex items-center gap-6 rounded-lg bg-zinc-50 px-4 py-2.5 text-sm">
+          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg bg-zinc-50 px-3 py-2.5 text-xs sm:gap-x-6 sm:px-4 sm:text-sm">
             <span>
               {t("journalEntries.form.totalDebit")} <strong>{formatRupiah(totalDebit)}</strong>
             </span>

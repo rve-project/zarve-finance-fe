@@ -90,7 +90,7 @@ export default function ProfitAndLossPage() {
             return (
               <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {incomeChart.length > 0 && (
-                  <div className="rounded-xl border border-zinc-200 bg-white p-5">
+                  <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
                     <p className="mb-4 text-sm font-semibold text-zinc-700">{t("profitLoss.incomeComposition")}</p>
                     <ResponsiveContainer width="100%" height={Math.max(160, incomeChart.length * 32)}>
                       <BarChart data={incomeChart} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 0 }}>
@@ -104,7 +104,7 @@ export default function ProfitAndLossPage() {
                   </div>
                 )}
                 {expenseChart.length > 0 && (
-                  <div className="rounded-xl border border-zinc-200 bg-white p-5">
+                  <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
                     <p className="mb-4 text-sm font-semibold text-zinc-700">{t("profitLoss.expenseComposition")}</p>
                     <ResponsiveContainer width="100%" height={Math.max(160, expenseChart.length * 32)}>
                       <BarChart data={expenseChart} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 0 }}>
@@ -121,7 +121,7 @@ export default function ProfitAndLossPage() {
             );
           })()}
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-6">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6">
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{t("profitLoss.incomeSection")}</h2>
             <table className="mb-6 w-full text-sm">
               <tbody>
@@ -172,7 +172,7 @@ export default function ProfitAndLossPage() {
               </tbody>
             </table>
 
-            <div className="flex items-center justify-between border-t border-zinc-200 pt-4 text-lg font-bold">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-200 pt-4 text-base font-bold sm:text-lg">
               <span>{t("profitLoss.netProfit")}</span>
               <span className={data.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}>{formatRupiah(data.netProfit)}</span>
             </div>

@@ -75,7 +75,7 @@ export default function GeofenceViolationsPage() {
 
       {data && (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatTile
               icon={AlertTriangle}
               iconClass="bg-amber-50 text-amber-600"
@@ -104,7 +104,7 @@ export default function GeofenceViolationsPage() {
             />
           </div>
 
-          <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
+          <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
             <SegmentedBar
               title={t("geofenceViolations.compositionTitle")}
               segments={[

@@ -17,7 +17,7 @@ export function Pagination({ page, limit, total, onChange, loading, itemLabel }:
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="mt-4 flex items-center justify-between text-sm text-zinc-500">
+    <div className="mt-4 flex flex-col gap-2 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
       <span>
         {t("pagination.showing")} {(page - 1) * limit + 1}-{Math.min(page * limit, total)} {t("pagination.of")} {total.toLocaleString("id-ID")} {itemLabel}
       </span>

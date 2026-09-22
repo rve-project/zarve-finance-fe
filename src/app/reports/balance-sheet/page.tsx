@@ -110,15 +110,15 @@ export default function BalanceSheetPage() {
           </div>
 
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-zinc-200 bg-white p-5">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
               <SegmentedBar title={t("balanceSheet.assetComposition")} segments={topSegments(data.assets, t("home.otherBranch"))} />
             </div>
-            <div className="rounded-xl border border-zinc-200 bg-white p-5">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
               <SegmentedBar title={t("balanceSheet.liabilitiesEquityComposition")} segments={topSegments([...data.liabilities, ...data.equity], t("home.otherBranch"))} />
             </div>
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-6">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6">
             {section(t("balanceSheet.assetsSection"), data.assets, data.totalAssets)}
             {section(t("balanceSheet.liabilitiesSection"), data.liabilities, data.totalLiabilities)}
             {section(t("balanceSheet.equitySection"), data.equity, data.totalEquity)}

@@ -70,7 +70,7 @@ export default function CashFlowPage() {
           <StatTile icon={ArrowDownCircle} iconClass="bg-red-50 text-red-600" label={t("cashFlow.cashOut")} value={formatRupiah(data.cashOut)} valueClass="text-red-600" />
 
           <div className="grid grid-cols-1 gap-4 lg:col-span-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-zinc-200 bg-white p-5">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
               <p className="mb-4 text-sm font-semibold text-zinc-700">{t("cashFlow.cashInVsOut")}</p>
               <ResponsiveContainer width="100%" height={140}>
                 <BarChart
@@ -94,7 +94,7 @@ export default function CashFlowPage() {
             </div>
 
             {data.accounts.length > 0 && (
-              <div className="rounded-xl border border-zinc-200 bg-white p-5">
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
                 <p className="mb-4 text-sm font-semibold text-zinc-700">{t("cashFlow.endingBalanceByAccount")}</p>
                 <ResponsiveContainer width="100%" height={Math.max(140, data.accounts.length * 32)}>
                   <BarChart

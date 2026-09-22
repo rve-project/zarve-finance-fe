@@ -52,10 +52,10 @@ export default function InvoiceDetailPage() {
         <ArrowLeft className="h-4 w-4" /> {t("invoiceDetail.backToList")}
       </Link>
 
-      <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-6">
-        <div className="mb-4 flex items-start justify-between">
+      <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-6">
+        <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-zinc-900">{invoice.invoiceNumber ?? invoice.id}</h1>
+            <h1 className="text-lg font-bold text-zinc-900 sm:text-xl">{invoice.invoiceNumber ?? invoice.id}</h1>
             <p className="text-sm text-zinc-500">{formatDate(invoice.date)}</p>
           </div>
           <span className={`rounded-full px-3 py-1 text-xs font-medium ${STATUS_STYLE[invoice.status] ?? "bg-zinc-100 text-zinc-500"}`}>

@@ -105,7 +105,7 @@ export default function GeneralLedgerPage() {
       </div>
 
       {data && data.lines.length > 1 && (
-        <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-5">
+        <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           <p className="mb-4 text-sm font-semibold text-zinc-700">{t("generalLedger.runningBalanceTrend")}</p>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={data.lines.map((l, i) => ({ i, date: formatDate(l.date), balance: l.runningBalance }))} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>

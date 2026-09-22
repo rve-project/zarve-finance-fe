@@ -68,7 +68,7 @@ export default function AccountsPage() {
       />
 
       {showForm && (
-        <form onSubmit={handleCreate} className="relative z-40 mb-6 grid grid-cols-1 gap-3 rounded-xl border border-zinc-200 bg-white p-5 sm:grid-cols-4">
+        <form onSubmit={handleCreate} className="relative z-40 mb-6 grid grid-cols-1 gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:grid-cols-4 sm:p-5">
           {error && <p className="col-span-full rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
           <input
             required

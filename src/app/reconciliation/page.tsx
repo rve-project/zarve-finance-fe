@@ -223,7 +223,7 @@ export default function ReconciliationPage() {
       <Pagination page={page} limit={LIMIT} total={total} onChange={load} loading={loading} itemLabel={t("reconciliation.itemLabel")} />
 
       {selectedCount > 0 && (
-        <div className="sticky bottom-4 mt-6 flex items-center justify-between rounded-xl border border-emerald-200 bg-white p-4 shadow-lg">
+        <div className="sticky bottom-4 mt-6 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-zinc-500">
               {selectedCount.toLocaleString("id-ID")} {t("reconciliation.paymentsSelected")} {allMode && t("reconciliation.allUnreconciledNote")}
@@ -234,25 +234,30 @@ export default function ReconciliationPage() {
             <button
               onClick={() => setConfirming(true)}
               disabled={!bankAccountId}
-              className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+              className="w-full rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:w-auto"
             >
               {t("reconciliation.confirmNow")}
             </button>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
               <span className="text-sm text-zinc-600">
                 {t("reconciliation.confirmMovePrefix")} <strong>{selectedBank?.name}</strong> {t("reconciliation.confirmMoveDateLabel")} {formatDate(date)}?
               </span>
-              <button
-                onClick={handleConfirm}
-                disabled={submitting}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-              >
-                {submitting ? t("reconciliation.processing") : t("reconciliation.confirmYes")}
-              </button>
-              <button onClick={() => setConfirming(false)} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50">
-                {t("reconciliation.cancel")}
-              </button>
+              <div className="flex w-full gap-3 sm:w-auto">
+                <button
+                  onClick={handleConfirm}
+                  disabled={submitting}
+                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:flex-none"
+                >
+                  {submitting ? t("reconciliation.processing") : t("reconciliation.confirmYes")}
+                </button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  className="flex-1 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 sm:flex-none"
+                >
+                  {t("reconciliation.cancel")}
+                </button>
+              </div>
             </div>
           )}
         </div>
