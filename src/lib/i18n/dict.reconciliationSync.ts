@@ -1,0 +1,83 @@
+import type { Lang } from "@/lib/i18n";
+
+// Keys for: /reconciliation (Bank Reconciliation), /import (Data Sync), and
+// /reports/trial-balance (Trial Balance). Namespaced per page: reconciliation.*,
+// import.*, trialBalance.*.
+export const dictReconciliationSync: Record<string, Record<Lang, string>> = {
+  // Reconciliation page
+  "reconciliation.title": { id: "Rekonsiliasi Bank", en: "Bank Reconciliation" },
+  "reconciliation.subtitle": {
+    id: "Pindahkan payment dari Undeposited Funds ke akun Bank/Kas -- bisa satu-satu atau sekaligus semua",
+    en: "Move payments from Undeposited Funds to a Bank/Cash account -- one at a time or all at once",
+  },
+  "reconciliation.errorLoadFailed": { id: "Gagal memuat data", en: "Failed to load data" },
+  "reconciliation.errorRunFailed": { id: "Gagal menjalankan rekonsiliasi", en: "Failed to run reconciliation" },
+  "reconciliation.resultSuccess": {
+    id: "Rekonsiliasi berhasil: {count} payment, total {amount} dipindahkan.",
+    en: "Reconciliation successful: {count} payments, total {amount} moved.",
+  },
+  "reconciliation.statUnreconciled": { id: "Belum Direkonsiliasi", en: "Not Yet Reconciled" },
+  "reconciliation.statTotalAmount": { id: "Total Nominal", en: "Total Amount" },
+  "reconciliation.targetAccount": { id: "Akun Tujuan", en: "Target Account" },
+  "reconciliation.reconciliationDate": { id: "Tanggal Rekonsiliasi", en: "Reconciliation Date" },
+  "reconciliation.selectAll": { id: "Pilih Semua ({count} payment)", en: "Select All ({count} payments)" },
+  "reconciliation.clearSelection": { id: "Batalkan Pilihan", en: "Clear Selection" },
+  "reconciliation.colDate": { id: "Tanggal", en: "Date" },
+  "reconciliation.colDriver": { id: "Driver", en: "Driver" },
+  "reconciliation.colInvoice": { id: "Invoice", en: "Invoice" },
+  "reconciliation.colMethod": { id: "Metode", en: "Method" },
+  "reconciliation.colAmount": { id: "Jumlah", en: "Amount" },
+  "reconciliation.emptyState": { id: "Semua payment sudah direkonsiliasi.", en: "All payments have been reconciled." },
+  "reconciliation.itemLabel": { id: "payment", en: "payments" },
+  "reconciliation.paymentsSelected": { id: "payment dipilih", en: "payments selected" },
+  "reconciliation.allUnreconciledNote": { id: "(semua yang belum direkonsiliasi)", en: "(all unreconciled ones)" },
+  "reconciliation.confirmNow": { id: "Rekonsiliasi Sekarang", en: "Reconcile Now" },
+  "reconciliation.confirmMovePrefix": { id: "Yakin pindahkan ke", en: "Confirm moving to" },
+  "reconciliation.confirmMoveDateLabel": { id: "tanggal", en: "on" },
+  "reconciliation.processing": { id: "Memproses...", en: "Processing..." },
+  "reconciliation.confirmYes": { id: "Ya, Rekonsiliasi", en: "Yes, Reconcile" },
+  "reconciliation.cancel": { id: "Batal", en: "Cancel" },
+
+  // Import / Data Sync page
+  "import.subtitle": {
+    id: "Tarik seluruh data dari Zarve, lalu langsung posting ke pembukuan -- otomatis juga jalan tiap malam jam 02:00",
+    en: "Pull all data from Zarve, then post it directly to the books -- also runs automatically every night at 02:00",
+  },
+  "import.description": {
+    id: "Menarik seluruh riwayat invoice, kendaraan, dan status kendaraan dari Zarve ke database kita sendiri, lalu langsung mencatatnya sebagai jurnal pembukuan (invoice sewa harian yang sudah pernah diposting otomatis dilewati, jadi aman dijalankan berkali-kali). Semua halaman lain (Beranda, Rekap Revenue, Invoice, Laporan Keuangan) membaca dari hasil ini, bukan langsung ke Zarve, supaya cepat. Proses ini bisa memakan waktu 10-15 menit; boleh ditinggal, halaman ini otomatis update saat selesai. Jadwal otomatis juga sudah berjalan tiap malam jam 02:00, jadi tombol ini hanya perlu dipakai kalau butuh data terbaru sebelum jadwal berikutnya.",
+    en: "Pulls the entire invoice, vehicle, and vehicle status history from Zarve into our own database, then records it directly as bookkeeping journal entries (daily rental invoices that have already been posted are automatically skipped, so it's safe to run repeatedly). All other pages (Home, Revenue Recap, Invoices, Financial Reports) read from this result instead of hitting Zarve directly, to keep things fast. This process can take 10-15 minutes; you can leave it running, this page updates automatically when it's done. The automatic nightly schedule at 02:00 is already running, so this button only needs to be used when you need the latest data before the next scheduled run.",
+  },
+  "import.errorStartFailed": { id: "Gagal memulai sinkronisasi", en: "Failed to start synchronization" },
+  "import.syncingLabel": { id: "Sedang sinkronisasi...", en: "Synchronizing..." },
+  "import.processingFallback": { id: "Memproses...", en: "Processing..." },
+  "import.startNow": { id: "Sinkronkan Sekarang", en: "Sync Now" },
+  "import.starting": { id: "Memulai...", en: "Starting..." },
+  "import.lastSync": { id: "Sinkron Terakhir", en: "Last Sync" },
+  "import.never": { id: "Belum pernah", en: "Never" },
+  "import.totalInvoices": { id: "Total Invoice", en: "Total Invoices" },
+  "import.totalVehicles": { id: "Total Kendaraan", en: "Total Vehicles" },
+  "import.statusHistories": { id: "Riwayat Status Kendaraan", en: "Vehicle Status History" },
+  "import.lastError": { id: "Error Terakhir", en: "Last Error" },
+
+  // Trial Balance page
+  "trialBalance.subtitle": { id: "Saldo awal, mutasi, dan saldo akhir tiap akun", en: "Opening balance, movement, and ending balance for each account" },
+  "trialBalance.dateFrom": { id: "Dari", en: "From" },
+  "trialBalance.dateTo": { id: "Sampai", en: "To" },
+  "trialBalance.show": { id: "Tampilkan", en: "Show" },
+  "trialBalance.statTotalDebit": { id: "Total Debit", en: "Total Debit" },
+  "trialBalance.statTotalCredit": { id: "Total Kredit", en: "Total Credit" },
+  "trialBalance.statActiveAccounts": { id: "Akun Aktif", en: "Active Accounts" },
+  "trialBalance.chartTitle": { id: "Top 10 Akun by Saldo Akhir", en: "Top 10 Accounts by Ending Balance" },
+  "trialBalance.colCode": { id: "Kode", en: "Code" },
+  "trialBalance.colAccountName": { id: "Nama Akun", en: "Account Name" },
+  "trialBalance.colInitialBalance": { id: "Saldo Awal", en: "Opening Balance" },
+  "trialBalance.colDebit": { id: "Debit", en: "Debit" },
+  "trialBalance.colCredit": { id: "Kredit", en: "Credit" },
+  "trialBalance.colEndBalance": { id: "Saldo Akhir", en: "Ending Balance" },
+  "trialBalance.emptyState": { id: "Tidak ada mutasi untuk periode ini.", en: "No movement for this period." },
+  "trialBalance.typeAsset": { id: "Aset", en: "Asset" },
+  "trialBalance.typeLiability": { id: "Liabilitas", en: "Liability" },
+  "trialBalance.typeEquity": { id: "Ekuitas", en: "Equity" },
+  "trialBalance.typeIncome": { id: "Pendapatan", en: "Income" },
+  "trialBalance.typeExpense": { id: "Beban", en: "Expense" },
+};
