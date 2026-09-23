@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, Menu, UserCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useLanguage } from "@/lib/i18n";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 interface TopbarProps {
   onMenuClick?: () => void;
@@ -53,6 +54,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       </button>
 
       <div className="flex flex-1 items-center justify-end gap-3 sm:gap-4">
+        <ThemeToggle />
         <LanguageSwitch />
         <div className="relative">
           <button

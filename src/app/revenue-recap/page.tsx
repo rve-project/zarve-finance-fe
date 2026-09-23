@@ -376,11 +376,11 @@ export default function RevenueRecapPage() {
                         const isPartial = cell.kind === "revenue" && cell.amount && cell.partial;
                         const style =
                           cell.kind === "idle"
-                            ? { backgroundColor: "#FFF9C4" }
+                            ? { backgroundColor: "#FFF9C4", color: "#18181b" }
                             : cell.kind === "maintenance"
-                              ? { backgroundColor: "#FFCC80" }
+                              ? { backgroundColor: "#FFCC80", color: "#18181b" }
                               : isLeave
-                                ? { backgroundColor: "#EF9A9A" }
+                                ? { backgroundColor: "#EF9A9A", color: "#18181b" }
                                 : isPartial
                                   ? { backgroundColor: "#9E9D24", color: "white" }
                                   : undefined;

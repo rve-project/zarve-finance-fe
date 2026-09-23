@@ -150,6 +150,11 @@ export interface User {
   aktif: boolean;
 }
 
+export interface ManagedUser extends User {
+  zarveUserId: string | null;
+  createdAt: string;
+}
+
 export interface AccountBalanceRow {
   account: Account;
   initialBalance: number;

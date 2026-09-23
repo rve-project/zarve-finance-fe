@@ -1,0 +1,30 @@
+// Translation dictionary for the User Management page (src/app/users/page.tsx). Merge
+// into the main dict in src/lib/i18n.tsx alongside the other page dictionaries.
+export const dictUsers: Record<string, Record<"id" | "en", string>> = {
+  "users.title": { id: "Manajemen User", en: "User Management" },
+  "users.subtitle": {
+    id: "Hanya email yang terdaftar di sini yang bisa login ke RVE Finance (password tetap pakai akun Zarve)",
+    en: "Only emails registered here can sign in to RVE Finance (password still comes from the Zarve account)",
+  },
+  "users.addUser": { id: "+ Tambah User", en: "+ Add User" },
+  "users.cancel": { id: "Batal", en: "Cancel" },
+  "users.emailPlaceholder": { id: "Email akun Zarve", en: "Zarve account email" },
+  "users.namePlaceholder": { id: "Nama (opsional, diisi otomatis dari Zarve)", en: "Name (optional, filled from Zarve)" },
+  "users.save": { id: "Simpan", en: "Save" },
+  "users.errorSaving": { id: "Gagal menyimpan user", en: "Failed to save user" },
+  "users.colName": { id: "Nama", en: "Name" },
+  "users.colEmail": { id: "Email", en: "Email" },
+  "users.colStatus": { id: "Status", en: "Status" },
+  "users.colZarve": { id: "Akun Zarve", en: "Zarve Account" },
+  "users.colActions": { id: "Aksi", en: "Actions" },
+  "users.active": { id: "Aktif", en: "Active" },
+  "users.inactive": { id: "Nonaktif", en: "Inactive" },
+  "users.linked": { id: "Sudah pernah login", en: "Has signed in" },
+  "users.notLinked": { id: "Belum pernah login", en: "Never signed in" },
+  "users.you": { id: "(kamu)", en: "(you)" },
+  "users.deactivate": { id: "Nonaktifkan", en: "Deactivate" },
+  "users.activate": { id: "Aktifkan", en: "Activate" },
+  "users.delete": { id: "Hapus", en: "Delete" },
+  "users.confirmDelete": { id: "Hapus akses untuk {email}?", en: "Remove access for {email}?" },
+  "users.empty": { id: "Belum ada user terdaftar.", en: "No registered users yet." },
+};

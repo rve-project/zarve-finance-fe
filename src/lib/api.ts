@@ -14,6 +14,7 @@ import {
   JournalEntryDetail,
   JournalEntryPage,
   JournalLineInput,
+  ManagedUser,
   Partner,
   PartnerPage,
   Payment,
@@ -79,6 +80,7 @@ const get = <T>(path: string) => request<T>(path);
 const post = <T>(path: string, data?: unknown) =>
   request<T>(path, { method: "POST", body: data !== undefined ? JSON.stringify(data) : undefined });
 const put = <T>(path: string, data: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(data) });
+const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 
 async function downloadFile(path: string, filename: string) {
   const token = getToken();
@@ -111,8 +113,14 @@ function qs(params: Record<string, string | number | undefined>) {
 
 export const api = {
   login: (email: string, password: string) => post<{ token: string; user: User }>("/auth/login", { email, password }),
+  googleLogin: (idToken: string) => post<{ token: string; user: User }>("/auth/google", { idToken }),
   logout: () => post<void>("/auth/logout"),
   me: () => get<User>("/auth/me"),
+
+  users: () => get<ManagedUser[]>("/users"),
+  createUser: (data: { email: string; name?: string }) => post<ManagedUser>("/users", data),
+  updateUser: (id: number, data: { name?: string; aktif?: boolean }) => put<ManagedUser>(`/users/${id}`, data),
+  deleteUser: (id: number) => del<void>(`/users/${id}`),
 
   accounts: (type?: AccountType) => get<Account[]>(`/accounts${qs({ type })}`),
   createAccount: (data: { code: string; name: string; type: AccountType; parentId?: number }) =>

@@ -2,12 +2,14 @@
 
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { api, clearToken, getToken, setToken } from "./api";
+import { signInWithGoogle } from "./firebase";
 import { User } from "./types";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -32,6 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(loggedInUser);
   }
 
+  async function loginWithGoogle() {
+    const idToken = await signInWithGoogle();
+    const { token, user: loggedInUser } = await api.googleLogin(idToken);
+    setToken(token);
+    setUser(loggedInUser);
+  }
+
   async function logout() {
     try {
       await api.logout();
@@ -41,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

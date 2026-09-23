@@ -8,6 +8,7 @@ import { dictFinancialReportsA } from "./i18n/dict.financialReportsA";
 import { dictInvoices } from "./i18n/dict.invoices";
 import { dictRevenueSettings } from "./i18n/dict.revenueSettings";
 import { dictFinancialReportsB } from "./i18n/dict.financialReportsB";
+import { dictUsers } from "./i18n/dict.users";
 
 export type Lang = "id" | "en";
 
@@ -23,6 +24,7 @@ const dict: Record<string, Record<Lang, string>> = {
   ...dictInvoices,
   ...dictRevenueSettings,
   ...dictFinancialReportsB,
+  ...dictUsers,
 
   // Sidebar sections
   "section.utama": { id: "Utama", en: "Main" },
@@ -51,7 +53,12 @@ const dict: Record<string, Record<Lang, string>> = {
   "nav.profitabilitasKendaraan": { id: "Profitabilitas Kendaraan", en: "Vehicle Profitability" },
   "nav.keluarKota": { id: "Keluar Kota (Geofence)", en: "Out of Town (Geofence)" },
   "nav.sinkronisasiData": { id: "Sinkronisasi Data", en: "Data Sync" },
+  "nav.manajemenUser": { id: "Manajemen User", en: "User Management" },
   "nav.pengaturan": { id: "Pengaturan", en: "Settings" },
+
+  // Theme toggle
+  "theme.switchToDark": { id: "Ganti ke tema gelap", en: "Switch to dark theme" },
+  "theme.switchToLight": { id: "Ganti ke tema terang", en: "Switch to light theme" },
 
   // Common
   "common.logout": { id: "Keluar", en: "Log out" },
@@ -69,7 +76,9 @@ const dict: Record<string, Record<Lang, string>> = {
   "login.passwordPlaceholder": { id: "Masukkan password", en: "Enter your password" },
   "login.submit": { id: "Masuk", en: "Sign in" },
   "login.submitting": { id: "Memproses...", en: "Signing in..." },
-  "login.noAccount": { id: "Belum punya akun Zarve? Hubungi admin operasional untuk didaftarkan.", en: "Don't have a Zarve account yet? Contact the operations admin to get registered." },
+  "login.noAccount": { id: "Belum punya akses? Email Zarve kamu harus didaftarkan dulu oleh admin RVE Finance.", en: "No access yet? Your Zarve email has to be registered by an RVE Finance admin first." },
+  "login.or": { id: "atau", en: "or" },
+  "login.google": { id: "Masuk dengan Google", en: "Sign in with Google" },
   "login.errorGeneric": { id: "Gagal login", en: "Sign in failed" },
   "login.showPassword": { id: "Tampilkan password", en: "Show password" },
   "login.hidePassword": { id: "Sembunyikan password", en: "Hide password" },

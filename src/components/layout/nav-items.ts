@@ -13,6 +13,7 @@ import {
   Settings,
   Store,
   TrendingUp,
+  UserCog,
   Users,
   Wallet,
   type LucideIcon,
@@ -72,6 +73,7 @@ export const navSections: NavSection[] = [
     titleKey: "section.administrasi",
     items: [
       { labelKey: "nav.sinkronisasiData", href: "/import", icon: FileSpreadsheet },
+      { labelKey: "nav.manajemenUser", href: "/users", icon: UserCog },
       { labelKey: "nav.pengaturan", href: "/settings", icon: Settings },
     ],
   },

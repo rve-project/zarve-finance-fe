@@ -12,11 +12,99 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Dark theme: toggled by the `dark` class on <html> (see src/lib/theme.ts). Instead of
+   adding dark: variants to every page, the palette the pages already use is remapped --
+   zinc is inverted, `white` becomes the card surface, and the pale -50 accent tints
+   become translucent washes of their hue. */
+.dark {
+  color-scheme: dark;
+  --background: #0e0e10;
+  --foreground: #f2f2f5;
+
+  --color-white: #18181b;
+  --color-zinc-50: #0e0e10;
+  --color-zinc-100: #242428;
+  --color-zinc-200: #2e2e33;
+  --color-zinc-300: #45454c;
+  --color-zinc-400: #7a7a83;
+  --color-zinc-500: #9d9da6;
+  --color-zinc-600: #b8b8c0;
+  --color-zinc-700: #d0d0d6;
+  --color-zinc-800: #e2e2e7;
+  --color-zinc-900: #f2f2f5;
+  --color-zinc-950: #fafafa;
+
+  --color-emerald-50: rgb(16 185 129 / 0.14);
+  --color-red-50: rgb(239 68 68 / 0.14);
+  --color-blue-50: rgb(59 130 246 / 0.14);
+  --color-amber-50: rgb(245 158 11 / 0.14);
+  --color-violet-50: rgb(139 92 246 / 0.14);
+  --color-sky-50: rgb(14 165 233 / 0.14);
+  --color-purple-50: rgb(168 85 247 / 0.14);
+  --color-orange-50: rgb(249 115 22 / 0.14);
+  --color-rose-50: rgb(244 63 94 / 0.14);
+  --color-red-100: rgb(239 68 68 / 0.22);
+  --color-red-200: rgb(239 68 68 / 0.35);
+}
+
+/* The emerald login brand panel is already dark -- keep its original light palette. */
+.dark .on-brand {
+  --color-white: #ffffff;
+  --color-emerald-50: #ecfdf5;
+}
+
+/* `white` now means "surface", so text on filled buttons needs its white back. */
+.dark .text-white {
+  color: #ffffff;
+}
+
+/* Accent text shades tuned for white backgrounds are too dim on dark ones. */
+.dark .text-emerald-600:not(.on-brand *),
+.dark .text-emerald-700:not(.on-brand *) {
+  color: #34d399;
+}
+.dark .text-emerald-800 {
+  color: #6ee7b7;
+}
+.dark .text-red-500,
+.dark .text-red-600,
+.dark .text-red-700 {
+  color: #f87171;
+}
+.dark .text-blue-600,
+.dark .text-blue-700 {
+  color: #60a5fa;
+}
+.dark .text-amber-600,
+.dark .text-amber-700 {
+  color: #fbbf24;
+}
+.dark .text-violet-600,
+.dark .text-violet-700 {
+  color: #a78bfa;
+}
+.dark .text-sky-600 {
+  color: #38bdf8;
+}
+.dark .text-purple-600 {
+  color: #c084fc;
+}
+.dark .text-orange-600 {
+  color: #fb923c;
+}
+.dark .text-rose-600 {
+  color: #fb7185;
+}
+
+/* Recharts gridlines/axis labels are hardcoded hex props; CSS beats SVG attributes. */
+.dark .recharts-cartesian-grid line {
+  stroke: #2e2e33;
+}
+.dark .recharts-cartesian-axis-tick-value {
+  fill: #9d9da6;
+}
+.dark .recharts-tooltip-cursor {
+  fill: #242428;
 }
 
 body {
