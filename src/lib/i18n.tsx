@@ -15,6 +15,7 @@ import { dictB2bSettings } from "./i18n/dict.b2bSettings";
 import { dictFixedAssets } from "./i18n/dict.fixedAssets";
 import { dictPemenuhan } from "./i18n/dict.pemenuhan";
 import { dictProduk } from "./i18n/dict.produk";
+import { dictContacts } from "./i18n/dict.contacts";
 
 export type Lang = "id" | "en";
 
@@ -37,9 +38,11 @@ const dict: Record<string, Record<Lang, string>> = {
   ...dictFixedAssets,
   ...dictPemenuhan,
   ...dictProduk,
+  ...dictContacts,
 
   // Sidebar sections
   "section.utama": { id: "Utama", en: "Main" },
+  "section.operasionalB2b": { id: "Operasional", en: "Operations" },
   "section.masterData": { id: "Master Data", en: "Master Data" },
   "section.akuntansi": { id: "Akuntansi", en: "Accounting" },
   "section.laporanKeuangan": { id: "Laporan Keuangan", en: "Financial Reports" },
@@ -49,8 +52,9 @@ const dict: Record<string, Record<Lang, string>> = {
   "nav.beranda": { id: "Beranda", en: "Home" },
   "nav.b2bDashboard": { id: "Dashboard B2B", en: "B2B Dashboard" },
   "nav.kasBank": { id: "Kas & Bank", en: "Cash & Bank" },
+  "nav.kontak": { id: "Kontak", en: "Contacts" },
   "nav.daftarAkunB2b": { id: "Daftar Akun", en: "Chart of Accounts" },
-  "nav.asetTetap": { id: "Aset Tetap", en: "Fixed Assets" },
+  "nav.asetTetap": { id: "Aset", en: "Assets" },
   "nav.pemenuhan": { id: "Pemenuhan", en: "Fulfillment" },
   "nav.produk": { id: "Produk", en: "Products" },
   "nav.pengaturanB2b": { id: "Pengaturan", en: "Settings" },

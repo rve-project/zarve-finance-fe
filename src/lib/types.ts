@@ -827,3 +827,22 @@ export interface WarehouseTransfer {
   attachments: WarehouseTransferAttachment[];
   createdAt: string;
 }
+
+// "Kontak" -- a B2B-only contact book (Pelanggan/Supplier/Karyawan/Lainnya). No AR/AP
+// balance tracking exists for B2B yet, so "Saldo" is always 0 for now.
+export type ContactType = "customer" | "vendor" | "employee" | "other";
+
+export interface Contact {
+  id: number;
+  type: ContactType;
+  name: string;
+  companyName: string | null;
+  address: string | null;
+  email: string | null;
+  mobilePhone: string | null;
+  phone: string | null;
+  npwp: string | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+}

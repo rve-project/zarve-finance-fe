@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown, Search, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
@@ -148,12 +150,10 @@ function CategoryModal({ onClose }: { onClose: () => void }) {
 function ProductListTab({
   showCategoryModal,
   onCloseCategoryModal,
-  reloadKey,
   onOpenCategoryModal,
 }: {
   showCategoryModal: boolean;
   onCloseCategoryModal: () => void;
-  reloadKey: number;
   onOpenCategoryModal: () => void;
 }) {
   const { t } = useLanguage();
@@ -165,7 +165,7 @@ function ProductListTab({
     api.products({ search: search || undefined, includeArchived: showArchived }).then(setData).catch(() => {});
   }
 
-  useEffect(load, [showArchived, reloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [showArchived]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const products: Product[] = data?.products ?? [];
 
@@ -192,14 +192,6 @@ function ProductListTab({
           <button type="button" onClick={onOpenCategoryModal} className="rounded-lg border border-zinc-200 bg-white px-4 py-1.5 text-sm font-semibold text-emerald-600 hover:bg-emerald-50">
             {t("produk.manageCategories")}
           </button>
-          <a
-            href="/b2b-produk/new"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
-          >
-            + {t("produk.addProduct")}
-          </a>
         </div>
       </div>
 
@@ -264,25 +256,23 @@ const ADJUSTMENT_CATEGORY_KEYS: Record<StockAdjustmentCategory, string> = {
   opening_quantity: "produk.adjustments.categoryOpeningQuantity",
 };
 
-function StockAdjustmentsTab({ reloadKey }: { reloadKey: number }) {
+function StockAdjustmentsTab() {
   const { t } = useLanguage();
   const [adjustments, setAdjustments] = useState<StockAdjustment[] | null>(null);
 
   useEffect(() => {
     api.stockAdjustments().then(setAdjustments).catch(() => {});
-  }, [reloadKey]);
+  }, []);
 
   return (
     <div>
       <div className="mb-4 flex justify-end">
-        <a
+        <Link
           href="/b2b-produk/stock-adjustments/new"
-          target="_blank"
-          rel="noopener noreferrer"
           className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
         >
           + {t("produk.adjustments.add")}
-        </a>
+        </Link>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
@@ -322,25 +312,23 @@ function StockAdjustmentsTab({ reloadKey }: { reloadKey: number }) {
   );
 }
 
-function WarehouseTransfersTab({ reloadKey }: { reloadKey: number }) {
+function WarehouseTransfersTab() {
   const { t } = useLanguage();
   const [transfers, setTransfers] = useState<WarehouseTransfer[] | null>(null);
 
   useEffect(() => {
     api.warehouseTransfers().then(setTransfers).catch(() => {});
-  }, [reloadKey]);
+  }, []);
 
   return (
     <div>
       <div className="mb-4 flex justify-end">
-        <a
+        <Link
           href="/b2b-produk/warehouse-transfers/new"
-          target="_blank"
-          rel="noopener noreferrer"
           className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
         >
           + {t("produk.warehouse.transfer.add")}
-        </a>
+        </Link>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
@@ -378,7 +366,7 @@ function WarehouseTransfersTab({ reloadKey }: { reloadKey: number }) {
   );
 }
 
-function WarehouseListTab({ reloadKey }: { reloadKey: number }) {
+function WarehouseListTab() {
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -388,7 +376,7 @@ function WarehouseListTab({ reloadKey }: { reloadKey: number }) {
     api.warehouses({ search: search || undefined, includeArchived: showArchived }).then(setWarehouses).catch(() => {});
   }
 
-  useEffect(load, [showArchived, reloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [showArchived]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
@@ -410,14 +398,12 @@ function WarehouseListTab({ reloadKey }: { reloadKey: number }) {
           />
         </div>
 
-        <a
+        <Link
           href="/b2b-produk/warehouses/new"
-          target="_blank"
-          rel="noopener noreferrer"
           className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700"
         >
           + {t("produk.actions.addWarehouse")}
-        </a>
+        </Link>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
@@ -467,35 +453,16 @@ function WarehouseListTab({ reloadKey }: { reloadKey: number }) {
 
 export default function ProdukPage() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [topTab, setTopTab] = useState<TopTab>("goods");
   const [goodsSubTab, setGoodsSubTab] = useState<GoodsSubTab>("list");
   const [warehouseSubTab, setWarehouseSubTab] = useState<WarehouseSubTab>("list");
   const [summary, setSummary] = useState<ProductListResult["summary"] | null>(null);
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [productsReloadKey, setProductsReloadKey] = useState(0);
-  const [warehousesReloadKey, setWarehousesReloadKey] = useState(0);
-  const [adjustmentsReloadKey, setAdjustmentsReloadKey] = useState(0);
-  const [transfersReloadKey, setTransfersReloadKey] = useState(0);
 
-  function loadSummary() {
-    api.products().then((res) => setSummary(res.summary)).catch(() => {});
-  }
-
-  useEffect(loadSummary, [productsReloadKey, warehousesReloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Product/warehouse creation now open in a new browser tab (not a modal), so this tab
-  // has no way to know when something was saved there -- refetch whenever the user
-  // comes back.
   useEffect(() => {
-    function onFocus() {
-      setProductsReloadKey((k) => k + 1);
-      setWarehousesReloadKey((k) => k + 1);
-      setAdjustmentsReloadKey((k) => k + 1);
-      setTransfersReloadKey((k) => k + 1);
-    }
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    api.products().then((res) => setSummary(res.summary)).catch(() => {});
   }, []);
 
   return (
@@ -504,10 +471,10 @@ export default function ProdukPage() {
         title={t("produk.title")}
         action={
           <TindakanDropdown
-            onAddProduct={() => window.open("/b2b-produk/new", "_blank", "noopener,noreferrer")}
-            onAddWarehouse={() => window.open("/b2b-produk/warehouses/new", "_blank", "noopener,noreferrer")}
-            onAddStockAdjustment={() => window.open("/b2b-produk/stock-adjustments/new", "_blank", "noopener,noreferrer")}
-            onAddWarehouseTransfer={() => window.open("/b2b-produk/warehouse-transfers/new", "_blank", "noopener,noreferrer")}
+            onAddProduct={() => router.push("/b2b-produk/new")}
+            onAddWarehouse={() => router.push("/b2b-produk/warehouses/new")}
+            onAddStockAdjustment={() => router.push("/b2b-produk/stock-adjustments/new")}
+            onAddWarehouseTransfer={() => router.push("/b2b-produk/warehouse-transfers/new")}
           />
         }
       />
@@ -579,11 +546,10 @@ export default function ProdukPage() {
             <ProductListTab
               showCategoryModal={showCategoryModal}
               onCloseCategoryModal={() => setShowCategoryModal(false)}
-              reloadKey={productsReloadKey}
               onOpenCategoryModal={() => setShowCategoryModal(true)}
             />
           )}
-          {goodsSubTab === "adjustments" && <StockAdjustmentsTab reloadKey={adjustmentsReloadKey} />}
+          {goodsSubTab === "adjustments" && <StockAdjustmentsTab />}
           {goodsSubTab === "approval" && (
             <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center">
               <p className="font-medium text-zinc-700">{t("produk.approval.empty")}</p>
@@ -610,8 +576,8 @@ export default function ProdukPage() {
             ))}
           </div>
 
-          {warehouseSubTab === "list" && <WarehouseListTab reloadKey={warehousesReloadKey} />}
-          {warehouseSubTab === "transfer" && <WarehouseTransfersTab reloadKey={transfersReloadKey} />}
+          {warehouseSubTab === "list" && <WarehouseListTab />}
+          {warehouseSubTab === "transfer" && <WarehouseTransfersTab />}
           {warehouseSubTab === "approval" && (
             <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center">
               <p className="font-medium text-zinc-700">{t("produk.warehouse.approval.empty")}</p>

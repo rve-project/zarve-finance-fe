@@ -4,6 +4,8 @@ import {
   AccountCategory,
   AccountDetail,
   AccountType,
+  Contact,
+  ContactType,
   ActiveFixedAsset,
   AgedReceivablesResult,
   AppSettings,
@@ -410,4 +412,18 @@ export const api = {
     for (const file of files) formData.append("files", file);
     return request<{ fileName: string; url: string }[]>("/warehouse-transfers/upload-attachment", { method: "POST", body: formData });
   },
+
+  contacts: (params: { type?: ContactType; search?: string; includeArchived?: boolean } = {}) =>
+    get<Contact[]>(`/contacts${qs({ type: params.type, search: params.search, includeArchived: params.includeArchived ? "true" : undefined })}`),
+  createContact: (data: {
+    type: ContactType;
+    name: string;
+    companyName?: string;
+    address?: string;
+    email?: string;
+    mobilePhone?: string;
+    phone?: string;
+    npwp?: string;
+    notes?: string;
+  }) => post<Contact>("/contacts", data),
 };

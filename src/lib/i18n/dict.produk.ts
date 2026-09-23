@@ -64,7 +64,6 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   "produk.approval.emptyHint": { id: "Transaksi yang membutuhkan persetujuan akan muncul di sini.", en: "Transactions needing approval will show up here." },
 
   "produk.searchPlaceholder": { id: "Cari produk", en: "Search products" },
-  "produk.addProduct": { id: "Tambah produk baru", en: "Add New Product" },
   "produk.manageCategories": { id: "Atur kategori produk", en: "Manage Product Categories" },
   "produk.showArchived": { id: "Tampilkan produk diarsipkan", en: "Show archived products" },
 
