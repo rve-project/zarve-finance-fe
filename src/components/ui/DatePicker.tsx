@@ -34,9 +34,11 @@ export function DatePicker({ value, onChange, disabled, maxDate, placeholder, cl
   const DAY_LABELS = Array.from({ length: 7 }, (_, i) => t(`date.day${i}`));
   const parsed = parseIso(value);
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const [viewYear, setViewYear] = useState(() => parsed?.y ?? new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => parsed?.m ?? new Date().getMonth());
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +54,13 @@ export function DatePicker({ value, onChange, disabled, maxDate, placeholder, cl
     const p = parseIso(value);
     setViewYear(p?.y ?? new Date().getFullYear());
     setViewMonth(p?.m ?? new Date().getMonth());
+    if (!open && buttonRef.current) {
+      // Flip upward when there isn't enough room below -- otherwise the calendar
+      // (roughly 380px tall) gets rendered half off-screen or over whatever's below.
+      const rect = buttonRef.current.getBoundingClientRect();
+      const POPUP_HEIGHT = 380;
+      setOpenUpward(window.innerHeight - rect.bottom < POPUP_HEIGHT && rect.top > POPUP_HEIGHT);
+    }
     setOpen((o) => !o);
   }
 
@@ -97,6 +106,7 @@ export function DatePicker({ value, onChange, disabled, maxDate, placeholder, cl
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={toggleOpen}
         disabled={disabled}
@@ -119,7 +129,12 @@ export function DatePicker({ value, onChange, disabled, maxDate, placeholder, cl
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg">
+        <div
+          className={clsx(
+            "absolute left-0 z-50 w-72 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg",
+            openUpward ? "bottom-full mb-2" : "top-full mt-2"
+          )}
+        >
           <div className="mb-2 flex items-center justify-between">
             <button type="button" onClick={() => stepMonth(-1)} className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100" aria-label={t("date.prevMonth")}>
               <ChevronLeft className="h-4 w-4" />

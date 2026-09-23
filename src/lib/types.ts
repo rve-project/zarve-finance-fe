@@ -1,4 +1,5 @@
 export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
+export type AccountAccessMode = "all" | "some";
 
 export interface Account {
   id: number;
@@ -6,6 +7,33 @@ export interface Account {
   name: string;
   type: AccountType;
   parentId: number | null;
+  isActive: boolean;
+  description: string | null;
+  categoryId: number | null;
+  taxId: number | null;
+  accessMode: AccountAccessMode;
+}
+
+/** Returned only by GET/POST/PUT /accounts/:id -- the plain list endpoint doesn't
+ * include this to avoid an extra query per row for something the list view never
+ * shows. */
+export interface AccountDetail extends Account {
+  accessUserIds: number[];
+}
+
+export interface AccountCategory {
+  id: number;
+  value: string;
+  label: string;
+  type: AccountType;
+  codeHint: string | null;
+  isActive: boolean;
+}
+
+export interface TaxCode {
+  id: number;
+  name: string;
+  rate: number;
   isActive: boolean;
 }
 
@@ -375,6 +403,7 @@ export interface JournalLineInput {
   partnerId?: number | null;
   debit: number;
   credit: number;
+  description?: string | null;
 }
 
 export interface JournalEntrySummary {
@@ -404,6 +433,7 @@ export interface JournalEntryLineDetail {
   partnerName: string | null;
   debit: number;
   credit: number;
+  description: string | null;
 }
 
 export interface JournalEntryDetail extends JournalEntrySummary {
@@ -536,4 +566,264 @@ export interface GeofenceViolationsResult {
   page: number;
   limit: number;
   data: GeofenceViolationRow[];
+}
+
+// Kas & Bank -- cash/bank accounts with a ledger balance (always accurate) alongside
+// whatever was last imported from a bank statement file (no live bank connection).
+export interface CashBankAccount {
+  id: number;
+  code: string;
+  name: string;
+  isActive: boolean;
+  saldoJurnal: number;
+  saldoBank: number;
+}
+
+export interface CashBankSummary {
+  asOf: string;
+  pemasukanMendatang: number;
+  pemasukanMendatangCount: number;
+  pengeluaranMendatang: number;
+  pengeluaranMendatangCount: number;
+  saldoKasBank: number;
+  saldoKasBankCount: number;
+  saldoKartuKredit: number;
+  saldoKartuKreditCount: number;
+}
+
+export interface BankStatementImportResult {
+  importId: number;
+  totalLines: number;
+  endingBalance: number;
+}
+
+// Fixed assets (B2B). Buying an asset posts a real journal entry; depreciation is
+// straight-line, computed on read (book value / schedule), not auto-posted.
+export type DepreciationMethod = "straight_line";
+export type FixedAssetStatus = "active" | "disposed";
+
+export interface FixedAsset {
+  id: number;
+  assetNumber: string;
+  name: string;
+  description: string | null;
+  categoryAccountId: number;
+  categoryAccountCode: string;
+  categoryAccountName: string;
+  acquisitionDate: string;
+  acquisitionCost: number;
+  creditAccountId: number | null;
+  isNonDepreciating: boolean;
+  depreciationMethod: DepreciationMethod | null;
+  usefulLifeYears: number | null;
+  depreciationExpenseAccountId: number | null;
+  accumulatedDepreciationAccountId: number | null;
+  openingAccumulatedDepreciation: number;
+  openingAccumulatedDepreciationDate: string | null;
+  status: FixedAssetStatus;
+  disposalDate: string | null;
+  disposalAmount: number | null;
+  disposalJournalEntryId: number | null;
+  purchaseJournalEntryId: number | null;
+  createdAt: string;
+}
+
+export interface ActiveFixedAsset extends FixedAsset {
+  accumulatedDepreciation: number;
+  bookValue: number;
+}
+
+export interface DisposedFixedAsset extends FixedAsset {
+  bookValueAtDisposal: number;
+  gainLoss: number;
+}
+
+export interface PendingFixedAsset {
+  journalLineId: number;
+  journalEntryId: number;
+  date: string;
+  ref: string | null;
+  description: string | null;
+  accountId: number;
+  accountCode: string;
+  accountName: string;
+  amount: number;
+}
+
+export interface DepreciationScheduleRow {
+  assetId: number;
+  assetNumber: string;
+  assetName: string;
+  period: string;
+  method: DepreciationMethod;
+  value: number;
+  amount: number;
+}
+
+export interface DepreciationScheduleResult {
+  month: string;
+  data: DepreciationScheduleRow[];
+}
+
+export interface DisposeAssetResult {
+  disposalJournalEntryId: number;
+  bookValueAtDisposal: number;
+  gainLoss: number;
+}
+
+// "Pemenuhan" (order fulfillment) board -- operational/logistics tracker, not wired
+// into the ledger. Status moves manually (no live courier integration), matching
+// Mekari Jurnal's own board.
+export type OrderType = "sale" | "purchase";
+export type OrderStatus = "new" | "processing" | "shipping" | "completed" | "cancelled";
+
+export interface Order {
+  id: number;
+  type: OrderType;
+  orderNumber: string;
+  partyName: string;
+  orderDate: string;
+  amount: number;
+  status: OrderStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type OrdersByStatus = Record<OrderStatus, Order[]>;
+
+// "Produk" -- Barang & Jasa tab only for now (Gudang/warehouse is deferred, Aturan
+// Harga was dropped entirely). Stock is a plain manual number, no warehouse ledger
+// yet. A product can independently be bought, sold, or both, each linked to its own
+// account/tax -- matching Mekari's own "Tambah produk baru" form.
+export type ProductType = "barang" | "jasa";
+
+// "Tipe Produk" from Mekari's form -- Single (one unit) or Bundle (a package).
+// Hardcoded (not Settings-managed) since there are only ever these two values. Bundle
+// composition isn't implemented -- this is a label only for now.
+export type ProductKind = "single" | "bundle";
+
+export interface ProductCategory {
+  id: number;
+  name: string;
+  isActive: boolean;
+}
+
+export interface Product {
+  id: number;
+  type: ProductType;
+  name: string;
+  code: string;
+  barcode: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  unit: string | null;
+  description: string | null;
+  trackPurchase: boolean;
+  purchasePrice: number;
+  purchaseAccountId: number | null;
+  purchaseTaxId: number | null;
+  trackSale: boolean;
+  sellingPrice: number;
+  saleAccountId: number | null;
+  saleTaxId: number | null;
+  imageUrl: string | null;
+  productType: ProductKind;
+  inventoryAccountId: number | null;
+  bundleExtraCostAccountId: number | null;
+  trackInventory: boolean;
+  currentStock: number | null;
+  minStock: number | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface ProductSummary {
+  available: number;
+  lowStock: number;
+  outOfStock: number;
+  warehousesRegistered: number;
+}
+
+export interface ProductListResult {
+  products: Product[];
+  summary: ProductSummary;
+}
+
+// "Gudang" -- Daftar gudang only (list + create). Stock stays one flat number on the
+// product row, not split per warehouse -- so no transfer/approval data exists yet.
+export interface Warehouse {
+  id: number;
+  code: string;
+  name: string;
+  pics: { id: number; name: string }[];
+  address: string | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+// "Penyesuaian Stok" -- pick a type/category/account/date/warehouse, then list which
+// products change and by how much. Each line's before/after is that product's
+// allocation in the chosen warehouse specifically; posts a journal entry only for
+// lines whose product has a default inventory account set. "Kategori penyesuaian" is a
+// fixed, hardcoded list -- not Settings-managed.
+export type StockAdjustmentType = "count" | "in_out";
+export type StockAdjustmentCategory = "general" | "damaged" | "production" | "opening_quantity";
+
+export interface StockAdjustmentLine {
+  id: number;
+  productId: number;
+  productName: string;
+  productUnit: string | null;
+  stockBefore: number;
+  stockAfter: number;
+}
+
+export interface StockAdjustment {
+  id: number;
+  adjustmentNumber: string;
+  type: StockAdjustmentType;
+  category: StockAdjustmentCategory;
+  accountId: number | null;
+  warehouseId: number | null;
+  warehouseName: string | null;
+  adjustmentDate: string;
+  memo: string | null;
+  journalEntryId: number | null;
+  lines: StockAdjustmentLine[];
+  createdAt: string;
+}
+
+// "Transfer Gudang" -- moves qty of qty-tracked products between two warehouse
+// allocations. Doesn't change a product's total stock across every warehouse -- only
+// the per-warehouse split.
+export interface WarehouseTransferLine {
+  id: number;
+  productId: number;
+  productName: string;
+  productUnit: string | null;
+  qtyBefore: number;
+  qtyAfter: number;
+  qtyTransferred: number;
+}
+
+export interface WarehouseTransferAttachment {
+  id: number;
+  fileName: string;
+  url: string;
+}
+
+export interface WarehouseTransfer {
+  id: number;
+  transferNumber: string;
+  fromWarehouseId: number | null;
+  fromWarehouseName: string | null;
+  toWarehouseId: number | null;
+  toWarehouseName: string | null;
+  transferDate: string;
+  memo: string | null;
+  lines: WarehouseTransferLine[];
+  attachments: WarehouseTransferAttachment[];
+  createdAt: string;
 }

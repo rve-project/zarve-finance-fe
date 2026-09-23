@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import clsx from "clsx";
 import { navSections, type NavItem } from "./nav-items";
+import { useBusinessUnit } from "@/lib/business-unit";
 import { useLanguage } from "@/lib/i18n";
 
 function isActive(pathname: string, href: string) {
@@ -38,6 +39,7 @@ interface SidebarProps {
 export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { unit } = useBusinessUnit();
 
   const content = (
     <>
@@ -59,20 +61,27 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
-        {navSections.map((section) => (
-          <div key={section.titleKey}>
-            <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              {t(section.titleKey)}
-            </p>
-            <ul className="space-y-1">
-              {section.items.map((item) => (
-                <li key={item.href}>
-                  <NavLink item={item} pathname={pathname} onNavigate={onClose} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {navSections.map((section) => {
+          // B2B only has its own dashboard for now -- everything else is Zarve's menu,
+          // shown as-is in Zarve mode. As real B2B menu items get built, tag them
+          // `b2bOnly: true` in nav-items.ts and they'll show up here automatically.
+          const visibleItems = section.items.filter((item) => (unit === "zarve" ? !item.b2bOnly : !!item.b2bOnly));
+          if (!visibleItems.length) return null;
+          return (
+            <div key={section.titleKey}>
+              <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                {t(section.titleKey)}
+              </p>
+              <ul className="space-y-1">
+                {visibleItems.map((item) => (
+                  <li key={item.href}>
+                    <NavLink item={item} pathname={pathname} onNavigate={onClose} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
     </>
   );

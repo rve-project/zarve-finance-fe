@@ -16,8 +16,10 @@ export function MonthPicker({ value, onChange, disabled }: MonthPickerProps) {
   const { t } = useLanguage();
   const MONTH_LABELS = Array.from({ length: 12 }, (_, i) => t(`date.month${i}`));
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const [viewYear, setViewYear] = useState(() => Number(value.slice(0, 4)));
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const [selectedYear, selectedMonth] = value.split("-").map(Number);
 
@@ -35,6 +37,13 @@ export function MonthPicker({ value, onChange, disabled }: MonthPickerProps) {
   function toggleOpen() {
     if (disabled) return;
     setViewYear(selectedYear);
+    if (!open && buttonRef.current) {
+      // Flip upward when there isn't enough room below -- otherwise the picker gets
+      // rendered half off-screen or over whatever's below.
+      const rect = buttonRef.current.getBoundingClientRect();
+      const POPUP_HEIGHT = 260;
+      setOpenUpward(window.innerHeight - rect.bottom < POPUP_HEIGHT && rect.top > POPUP_HEIGHT);
+    }
     setOpen((o) => !o);
   }
 
@@ -49,6 +58,7 @@ export function MonthPicker({ value, onChange, disabled }: MonthPickerProps) {
   return (
     <div ref={containerRef} className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={toggleOpen}
         disabled={disabled}
@@ -62,7 +72,12 @@ export function MonthPicker({ value, onChange, disabled }: MonthPickerProps) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg">
+        <div
+          className={clsx(
+            "absolute left-0 z-50 w-64 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg",
+            openUpward ? "bottom-full mb-2" : "top-full mt-2"
+          )}
+        >
           <div className="mb-2 flex items-center justify-between">
             <button
               type="button"

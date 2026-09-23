@@ -15,11 +15,18 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// Dev-only: skips the login screen entirely (see rve-finance-be's DISABLE_AUTH_FOR_DEV,
+// which is what actually makes /auth/me succeed without a real session). A token still
+// has to exist for the `getToken()` guard below to fire the check at all, so this
+// writes a placeholder one -- its value is never validated while the backend flag is on.
+const DISABLE_AUTH = process.env.NEXT_PUBLIC_DISABLE_AUTH === "true";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(() => Boolean(getToken()));
+  const [loading, setLoading] = useState(() => DISABLE_AUTH || Boolean(getToken()));
 
   useEffect(() => {
+    if (DISABLE_AUTH && !getToken()) setToken("dev-bypass");
     if (!getToken()) return;
     api
       .me()

@@ -4,11 +4,42 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, Menu, UserCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useBusinessUnit, BusinessUnit } from "@/lib/business-unit";
 import { useLanguage } from "@/lib/i18n";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 interface TopbarProps {
   onMenuClick?: () => void;
+}
+
+function BusinessUnitSwitch() {
+  const { unit, setUnit } = useBusinessUnit();
+  const router = useRouter();
+
+  function handleSelect(u: BusinessUnit) {
+    if (u === unit) return;
+    setUnit(u);
+    // A page the user is currently on may not exist in the other unit's nav (e.g.
+    // /invoices in B2B mode) -- the dashboard is always valid in both.
+    router.push("/");
+  }
+
+  return (
+    <div className="flex items-center rounded-full border border-zinc-200 bg-zinc-50 p-0.5 text-xs font-semibold">
+      {(["zarve", "b2b"] as const).map((u) => (
+        <button
+          key={u}
+          type="button"
+          onClick={() => handleSelect(u)}
+          className={`rounded-full px-2.5 py-1 transition-colors ${
+            unit === u ? "bg-emerald-600 text-white" : "text-zinc-500 hover:text-zinc-800"
+          }`}
+        >
+          {u === "zarve" ? "Zarve" : "B2B"}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function LanguageSwitch() {
@@ -54,6 +85,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       </button>
 
       <div className="flex flex-1 items-center justify-end gap-3 sm:gap-4">
+        <BusinessUnitSwitch />
         <ThemeToggle />
         <LanguageSwitch />
         <div className="relative">

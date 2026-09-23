@@ -1,10 +1,20 @@
 import {
   Account,
+  AccountAccessMode,
+  AccountCategory,
+  AccountDetail,
   AccountType,
+  ActiveFixedAsset,
   AgedReceivablesResult,
   AppSettings,
   BalanceSheetResult,
+  BankStatementImportResult,
+  CashBankAccount,
+  CashBankSummary,
   CashFlowResult,
+  DepreciationScheduleResult,
+  DisposedFixedAsset,
+  DisposeAssetResult,
   DriverRevenueRecap,
   GeneralLedgerResult,
   GeofenceViolationsResult,
@@ -15,13 +25,26 @@ import {
   JournalEntryPage,
   JournalLineInput,
   ManagedUser,
+  Order,
+  OrdersByStatus,
+  OrderStatus,
+  OrderType,
   Partner,
   PartnerPage,
   Payment,
+  PendingFixedAsset,
+  Product,
+  ProductCategory,
+  ProductListResult,
   ProfitAndLossResult,
   ReconciliationHistoryPage,
   ReconciliationRunResult,
   RevenueRecap,
+  StockAdjustment,
+  StockAdjustmentCategory,
+  StockAdjustmentType,
+  TaxCode,
+  WarehouseTransfer,
   TrialBalanceResult,
   UnreconciledPaymentPage,
   User,
@@ -31,6 +54,7 @@ import {
   VendorBillDetail,
   VendorBillPage,
   VendorPaymentPage,
+  Warehouse,
   ZarveInvoiceDetail,
   ZarveInvoicePage,
   ZarveInvoiceType,
@@ -39,6 +63,7 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/api";
 const TOKEN_KEY = "rve_finance_token";
+const UNIT_KEY = "rve_finance_business_unit";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -55,6 +80,21 @@ export function clearToken() {
   window.localStorage.removeItem(TOKEN_KEY);
 }
 
+/** Which of the client's two separate businesses (Zarve rental / B2B) the app is
+ * currently scoped to. Read here (a plain module, not a component) so `request()` can
+ * attach it to every call; the single writer is `BusinessUnitProvider`
+ * (lib/business-unit.tsx), which calls `setBusinessUnit()` below to keep this the one
+ * source of truth. */
+export function getBusinessUnit(): "zarve" | "b2b" {
+  if (typeof window === "undefined") return "zarve";
+  return window.localStorage.getItem(UNIT_KEY) === "b2b" ? "b2b" : "zarve";
+}
+
+export function setBusinessUnit(unit: "zarve" | "b2b") {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(UNIT_KEY, unit);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const { headers: initHeaders, ...restInit } = init ?? {};
@@ -65,6 +105,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers: {
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "X-Business-Unit": getBusinessUnit(),
       ...initHeaders,
     },
   });
@@ -85,7 +126,10 @@ const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 async function downloadFile(path: string, filename: string) {
   const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "X-Business-Unit": getBusinessUnit(),
+    },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
@@ -123,9 +167,30 @@ export const api = {
   deleteUser: (id: number) => del<void>(`/users/${id}`),
 
   accounts: (type?: AccountType) => get<Account[]>(`/accounts${qs({ type })}`),
-  createAccount: (data: { code: string; name: string; type: AccountType; parentId?: number }) =>
-    post<Account>("/accounts", data),
-  updateAccount: (id: number, data: Partial<Account>) => put<Account>(`/accounts/${id}`, data),
+  getAccount: (id: number) => get<AccountDetail>(`/accounts/${id}`),
+  createAccount: (data: {
+    code: string;
+    name: string;
+    type?: AccountType;
+    categoryId?: number;
+    parentId?: number;
+    description?: string;
+    taxId?: number;
+    accessMode?: AccountAccessMode;
+    accessUserIds?: number[];
+  }) => post<AccountDetail>("/accounts", data),
+  updateAccount: (id: number, data: Partial<Account> & { accessUserIds?: number[] }) => put<AccountDetail>(`/accounts/${id}`, data),
+
+  accountCategories: (includeArchived = false) =>
+    get<AccountCategory[]>(`/account-categories${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
+  createAccountCategory: (data: { value: string; label: string; type: AccountType; codeHint?: string }) =>
+    post<AccountCategory>("/account-categories", data),
+  updateAccountCategory: (id: number, data: Partial<Pick<AccountCategory, "label" | "codeHint" | "isActive">>) =>
+    put<AccountCategory>(`/account-categories/${id}`, data),
+
+  taxes: (includeArchived = false) => get<TaxCode[]>(`/taxes${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
+  createTax: (data: { name: string; rate: number }) => post<TaxCode>("/taxes", data),
+  updateTax: (id: number, data: Partial<Pick<TaxCode, "name" | "rate" | "isActive">>) => put<TaxCode>(`/taxes/${id}`, data),
 
   partners: (params: { q?: string; page?: number; limit?: number; type?: "customer" | "vendor" }) =>
     get<PartnerPage>(`/partners${qs({ q: params.q, page: params.page, limit: params.limit, type: params.type })}`),
@@ -230,4 +295,119 @@ export const api = {
     get<VehicleProfitabilityResult>(`/reports/vehicle-profitability${qs({ from, to })}`),
   geofenceViolations: (from: string, to: string, page = 1, limit = 20) =>
     get<GeofenceViolationsResult>(`/reports/geofence-violations${qs({ from, to, page, limit })}`),
+
+  cashBankAccounts: (includeArchived = false) =>
+    get<CashBankAccount[]>(`/cash-bank/accounts${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
+  cashBankSummary: () => get<CashBankSummary>("/cash-bank/summary"),
+  downloadCashBankTemplate: () => downloadFile("/cash-bank/import-template", "Template Impor Rekening Koran.xlsx"),
+  importBankStatement: (accountId: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<BankStatementImportResult>(`/cash-bank/accounts/${accountId}/import`, { method: "POST", body: formData });
+  },
+
+  fixedAssetsDepreciationMethods: () => get<string[]>("/fixed-assets/depreciation-methods"),
+  fixedAssetsPending: () => get<PendingFixedAsset[]>("/fixed-assets/pending"),
+  fixedAssetsActive: () => get<ActiveFixedAsset[]>("/fixed-assets/active"),
+  fixedAssetsDisposed: () => get<DisposedFixedAsset[]>("/fixed-assets/disposed"),
+  fixedAssetsDepreciationSchedule: (month: string) =>
+    get<DepreciationScheduleResult>(`/fixed-assets/depreciation-schedule${qs({ month })}`),
+  createFixedAsset: (data: {
+    name: string;
+    assetNumber?: string;
+    categoryAccountId: number;
+    acquisitionDate: string;
+    acquisitionCost: number;
+    creditAccountId?: number;
+    description?: string;
+    isNonDepreciating: boolean;
+    depreciationMethod?: "straight_line";
+    usefulLifeYears?: number;
+    depreciationExpenseAccountId?: number;
+    accumulatedDepreciationAccountId?: number;
+    openingAccumulatedDepreciation?: number;
+    openingAccumulatedDepreciationDate?: string;
+    sourceJournalLineId?: number;
+  }) => post<ActiveFixedAsset>("/fixed-assets", data),
+  disposeFixedAsset: (id: number, data: { disposalDate: string; disposalAmount: number; receivedAccountId: number }) =>
+    post<DisposeAssetResult>(`/fixed-assets/${id}/dispose`, data),
+
+  orders: (type: OrderType, params: { from?: string; to?: string; search?: string } = {}) =>
+    get<OrdersByStatus>(`/orders${qs({ type, from: params.from, to: params.to, search: params.search })}`),
+  createOrder: (data: { type: OrderType; orderNumber?: string; partyName: string; orderDate: string; amount?: number; notes?: string }) =>
+    post<Order>("/orders", data),
+  updateOrderStatus: (id: number, status: OrderStatus) => put<Order>(`/orders/${id}/status`, { status }),
+
+  products: (params: { search?: string; includeArchived?: boolean } = {}) =>
+    get<ProductListResult>(`/products${qs({ search: params.search, includeArchived: params.includeArchived ? "true" : undefined })}`),
+  productWarehouseStock: (warehouseId?: number) => get<{ productId: number; qty: number }[]>(`/products/warehouse-stock${qs({ warehouseId })}`),
+  createProduct: (data: {
+    type: "barang" | "jasa";
+    name: string;
+    code?: string;
+    barcode?: string;
+    categoryId?: number;
+    unit?: string;
+    description?: string;
+    trackPurchase?: boolean;
+    purchasePrice?: number;
+    purchaseAccountId?: number;
+    purchaseTaxId?: number;
+    trackSale?: boolean;
+    sellingPrice?: number;
+    saleAccountId?: number;
+    saleTaxId?: number;
+    imageUrl?: string;
+    productType?: "single" | "bundle";
+    inventoryAccountId?: number;
+    bundleExtraCostAccountId?: number;
+    bundleComponents?: { productId: number; qty: number }[];
+    trackInventory?: boolean;
+    currentStock?: number;
+    minStock?: number;
+  }) => post<Product>("/products", data),
+  updateProduct: (
+    id: number,
+    data: Partial<Pick<Product, "name" | "categoryId" | "unit" | "description" | "purchasePrice" | "sellingPrice" | "currentStock" | "minStock" | "isActive">>
+  ) => put<Product>(`/products/${id}`, data),
+  uploadProductImage: (file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    return request<{ url: string }>("/products/upload-image", { method: "POST", body: formData });
+  },
+
+  productCategories: (includeArchived = false) =>
+    get<ProductCategory[]>(`/product-categories${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
+  createProductCategory: (name: string) => post<ProductCategory>("/product-categories", { name }),
+
+  warehouses: (params: { search?: string; includeArchived?: boolean } = {}) =>
+    get<Warehouse[]>(`/warehouses${qs({ search: params.search, includeArchived: params.includeArchived ? "true" : undefined })}`),
+  createWarehouse: (data: { name: string; code?: string; picUserIds?: number[]; address?: string; notes?: string }) =>
+    post<Warehouse>("/warehouses", data),
+
+  stockAdjustments: () => get<StockAdjustment[]>("/stock-adjustments"),
+  createStockAdjustment: (data: {
+    type: StockAdjustmentType;
+    category: StockAdjustmentCategory;
+    accountId?: number;
+    warehouseId?: number;
+    adjustmentDate: string;
+    memo?: string;
+    lines: { productId: number; value: number }[];
+  }) => post<StockAdjustment>("/stock-adjustments", data),
+
+  warehouseTransfers: () => get<WarehouseTransfer[]>("/warehouse-transfers"),
+  createWarehouseTransfer: (data: {
+    fromWarehouseId?: number;
+    toWarehouseId?: number;
+    transferDate: string;
+    memo?: string;
+    lines: { productId: number; qty: number }[];
+    attachments?: { fileName: string; url: string }[];
+  }) => post<WarehouseTransfer>("/warehouse-transfers", data),
+  uploadWarehouseTransferAttachments: (files: File[]) => {
+    const formData = new FormData();
+    for (const file of files) formData.append("files", file);
+    return request<{ fileName: string; url: string }[]>("/warehouse-transfers/upload-attachment", { method: "POST", body: formData });
+  },
 };

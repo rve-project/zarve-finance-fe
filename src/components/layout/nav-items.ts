@@ -2,15 +2,18 @@ import {
   AlertTriangle,
   BookOpen,
   BookText,
+  Boxes,
   Car,
   FileSpreadsheet,
   FileText,
   Home,
   Landmark,
   MapPinOff,
+  PackageCheck,
   Receipt,
   ScrollText,
   Settings,
+  ShoppingBag,
   Store,
   TrendingUp,
   UserCog,
@@ -23,6 +26,9 @@ export interface NavItem {
   labelKey: string;
   href: string;
   icon: LucideIcon;
+  /** Shown only when the current business unit is B2B -- everything else is Zarve's
+   * menu and stays hidden in B2B mode until real B2B menu items get built. */
+  b2bOnly?: boolean;
 }
 
 export interface NavSection {
@@ -35,6 +41,12 @@ export const navSections: NavSection[] = [
     titleKey: "section.utama",
     items: [
       { labelKey: "nav.beranda", href: "/", icon: Home },
+      { labelKey: "nav.b2bDashboard", href: "/b2b-dashboard", icon: Landmark, b2bOnly: true },
+      { labelKey: "nav.kasBank", href: "/b2b-kas-bank", icon: Wallet, b2bOnly: true },
+      { labelKey: "nav.daftarAkunB2b", href: "/b2b-accounts", icon: BookOpen, b2bOnly: true },
+      { labelKey: "nav.asetTetap", href: "/b2b-fixed-assets", icon: Boxes, b2bOnly: true },
+      { labelKey: "nav.pemenuhan", href: "/b2b-pemenuhan", icon: PackageCheck, b2bOnly: true },
+      { labelKey: "nav.produk", href: "/b2b-produk", icon: ShoppingBag, b2bOnly: true },
       { labelKey: "nav.invoice", href: "/invoices", icon: Receipt },
       { labelKey: "nav.rekapRevenue", href: "/revenue-recap", icon: TrendingUp },
     ],
@@ -75,6 +87,7 @@ export const navSections: NavSection[] = [
       { labelKey: "nav.sinkronisasiData", href: "/import", icon: FileSpreadsheet },
       { labelKey: "nav.manajemenUser", href: "/users", icon: UserCog },
       { labelKey: "nav.pengaturan", href: "/settings", icon: Settings },
+      { labelKey: "nav.pengaturanB2b", href: "/b2b-settings", icon: Settings, b2bOnly: true },
     ],
   },
 ];

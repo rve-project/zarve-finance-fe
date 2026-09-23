@@ -1,0 +1,52 @@
+// Translation dictionary for the B2B "Daftar Akun" (Chart of Accounts) list + create
+// pages. Merge into the main dict in src/lib/i18n.tsx alongside the other page
+// dictionaries. Account category names ("Cash & Bank", "Accounts Receivable (A/R)",
+// etc, see lib/accountCategory.ts) are deliberately left untranslated, matching how
+// the Mekari Jurnal reference this page is modeled on shows them in English too.
+export const dictB2bAccounts: Record<string, Record<"id" | "en", string>> = {
+  "b2bAccounts.breadcrumb": { id: "Akun", en: "Accounts" },
+  "b2bAccounts.title": { id: "Daftar Akun", en: "Chart of Accounts" },
+  "b2bAccounts.createJournalEntry": { id: "Buat Jurnal Umum", en: "Create Journal Entry" },
+  "b2bAccounts.addAccount": { id: "Buat Akun Baru", en: "Create New Account" },
+  "b2bAccounts.showArchived": { id: "Tampilkan Arsip Akun", en: "Show Archived Accounts" },
+  "b2bAccounts.actions": { id: "Tindakan", en: "Actions" },
+  "b2bAccounts.archiveSelected": { id: "Arsipkan yang dipilih", en: "Archive selected" },
+  "b2bAccounts.unarchiveSelected": { id: "Batalkan arsip yang dipilih", en: "Unarchive selected" },
+  "b2bAccounts.balanceNotePrefix": { id: "Saldo di bawah berdasarkan tanggal", en: "Balances below are as of" },
+  "b2bAccounts.balanceNoteSuffix": { id: "kecuali ada pernyataan lain", en: "unless stated otherwise" },
+  "b2bAccounts.colLock": { id: "Kunci", en: "Lock" },
+  "b2bAccounts.colCode": { id: "Kode Akun", en: "Account Code" },
+  "b2bAccounts.colName": { id: "Nama Akun", en: "Account Name" },
+  "b2bAccounts.colCategory": { id: "Kategori Akun", en: "Account Category" },
+  "b2bAccounts.colUsers": { id: "Pengguna", en: "Users" },
+  "b2bAccounts.colTax": { id: "Pajak", en: "Tax" },
+  "b2bAccounts.colBalance": { id: "Saldo (dalam IDR)", en: "Balance (in IDR)" },
+  "b2bAccounts.allUsers": { id: "all", en: "all" },
+  "b2bAccounts.empty": { id: "Belum ada akun.", en: "No accounts yet." },
+
+  // Create-account page
+  "b2bAccounts.new.breadcrumb": { id: "Daftar akun", en: "Chart of accounts" },
+  "b2bAccounts.new.title": { id: "Tambah akun baru", en: "Add new account" },
+  "b2bAccounts.new.sectionInfo": { id: "Informasi akun", en: "Account information" },
+  "b2bAccounts.new.sectionAccess": { id: "Akses akun", en: "Account access" },
+  "b2bAccounts.new.name": { id: "Nama akun", en: "Account name" },
+  "b2bAccounts.new.code": { id: "Kode akun", en: "Account code" },
+  "b2bAccounts.new.category": { id: "Kategori akun", en: "Account category" },
+  "b2bAccounts.new.isSubAccount": { id: "Buat akun ini bagian dari akun lain", en: "Make this account part of another account" },
+  "b2bAccounts.new.hint.isSubAccount": {
+    id: "Jadikan akun ini sub-akun dari akun lain, mis. \"Bank BCA\" di bawah \"Cash & Bank\".",
+    en: "Make this account a sub-account of another one, e.g. \"BCA Bank\" under \"Cash & Bank\".",
+  },
+  "b2bAccounts.new.parentAccount": { id: "Pilih akun induk", en: "Select parent account" },
+  "b2bAccounts.new.tax": { id: "Pajak", en: "Tax" },
+  "b2bAccounts.new.taxPlaceholder": { id: "Pilih pajak", en: "Select tax" },
+  "b2bAccounts.new.description": { id: "Deskripsi", en: "Description" },
+  "b2bAccounts.new.descriptionPlaceholder": { id: "Contoh: Akun untuk piutang karyawan", en: "e.g. Account for employee receivables" },
+  "b2bAccounts.new.accessLabel": { id: "Pengguna yang dapat mengakses", en: "Users who can access" },
+  "b2bAccounts.new.accessAll": { id: "Semua pengguna", en: "All users" },
+  "b2bAccounts.new.accessSome": { id: "Sebagian pengguna", en: "Some users" },
+  "b2bAccounts.new.cancel": { id: "Batalkan", en: "Cancel" },
+  "b2bAccounts.new.save": { id: "Simpan", en: "Save" },
+  "b2bAccounts.new.saving": { id: "Menyimpan...", en: "Saving..." },
+  "b2bAccounts.new.errorSave": { id: "Gagal menyimpan akun", en: "Failed to save account" },
+};

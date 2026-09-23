@@ -9,6 +9,12 @@ import { dictInvoices } from "./i18n/dict.invoices";
 import { dictRevenueSettings } from "./i18n/dict.revenueSettings";
 import { dictFinancialReportsB } from "./i18n/dict.financialReportsB";
 import { dictUsers } from "./i18n/dict.users";
+import { dictKasBank } from "./i18n/dict.kasBank";
+import { dictB2bAccounts } from "./i18n/dict.b2bAccounts";
+import { dictB2bSettings } from "./i18n/dict.b2bSettings";
+import { dictFixedAssets } from "./i18n/dict.fixedAssets";
+import { dictPemenuhan } from "./i18n/dict.pemenuhan";
+import { dictProduk } from "./i18n/dict.produk";
 
 export type Lang = "id" | "en";
 
@@ -25,6 +31,12 @@ const dict: Record<string, Record<Lang, string>> = {
   ...dictRevenueSettings,
   ...dictFinancialReportsB,
   ...dictUsers,
+  ...dictKasBank,
+  ...dictB2bAccounts,
+  ...dictB2bSettings,
+  ...dictFixedAssets,
+  ...dictPemenuhan,
+  ...dictProduk,
 
   // Sidebar sections
   "section.utama": { id: "Utama", en: "Main" },
@@ -35,6 +47,13 @@ const dict: Record<string, Record<Lang, string>> = {
 
   // Sidebar items
   "nav.beranda": { id: "Beranda", en: "Home" },
+  "nav.b2bDashboard": { id: "Dashboard B2B", en: "B2B Dashboard" },
+  "nav.kasBank": { id: "Kas & Bank", en: "Cash & Bank" },
+  "nav.daftarAkunB2b": { id: "Daftar Akun", en: "Chart of Accounts" },
+  "nav.asetTetap": { id: "Aset Tetap", en: "Fixed Assets" },
+  "nav.pemenuhan": { id: "Pemenuhan", en: "Fulfillment" },
+  "nav.produk": { id: "Produk", en: "Products" },
+  "nav.pengaturanB2b": { id: "Pengaturan", en: "Settings" },
   "nav.invoice": { id: "Invoice", en: "Invoices" },
   "nav.rekapRevenue": { id: "Rekap Revenue", en: "Revenue Recap" },
   "nav.driverPartner": { id: "Driver / Partner", en: "Driver / Partner" },
@@ -153,6 +172,11 @@ const dict: Record<string, Record<Lang, string>> = {
   "date.prevYear": { id: "Tahun sebelumnya", en: "Previous year" },
   "date.nextYear": { id: "Tahun berikutnya", en: "Next year" },
   "date.selectDate": { id: "Pilih tanggal", en: "Select date" },
+
+  // B2B Dashboard
+  "b2bDashboard.title": { id: "Dashboard B2B", en: "B2B Dashboard" },
+  "b2bDashboard.subtitle": { id: "Ringkasan keuangan untuk bisnis B2B", en: "Financial summary for the B2B business" },
+  "b2bDashboard.emptyState": { id: "Belum ada konten -- menyusul.", en: "No content yet -- coming soon." },
 
   // Pagination (shared component)
   "pagination.showing": { id: "Menampilkan", en: "Showing" },
