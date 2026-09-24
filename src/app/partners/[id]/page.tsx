@@ -183,8 +183,12 @@ export default function PartnerStatementPage() {
               </thead>
               <tbody>
                 {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-zinc-50">
-                    <td className="px-4 py-2.5 font-mono text-xs">{inv.number}</td>
+                  <tr key={inv.id} className="border-b border-zinc-50 hover:bg-zinc-50">
+                    <td className="px-4 py-2.5 font-mono text-xs">
+                      <Link href={`/finance-invoices/${inv.id}`} className="text-emerald-700 hover:underline">
+                        {inv.number}
+                      </Link>
+                    </td>
                     <td className="px-4 py-2.5">{formatDate(inv.invoiceDate)}</td>
                     <td className="px-4 py-2.5 text-zinc-500">{inv.state === "posted" ? t("partnersDetail.statusPosted") : t("partnersDetail.statusDraft")}</td>
                     <td className="px-4 py-2.5 text-right">{formatRupiah(inv.totalAmount)}</td>

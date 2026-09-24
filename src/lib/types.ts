@@ -91,13 +91,34 @@ export interface InvoiceLine {
   description: string;
   category: InvoiceLineCategory;
   accountId: number;
+  accountCode: string;
+  accountName: string;
   amount: number;
   taxRate: number;
   taxAmount: number;
 }
 
+export interface InvoiceSourceZarveInvoice {
+  zarveInvoiceId: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  total: number;
+  amountPaid: number;
+  status: string;
+}
+
 export interface InvoiceDetail extends Invoice {
+  partnerName: string;
+  vehiclePlateNumber: string | null;
+  amountPaid: number;
+  outstanding: number;
   lines: InvoiceLine[];
+  /** The individual outstanding Zarve daily invoices this monthly recap line stands in
+   * for (see zarveSync.controller.ts) -- lets staff cross-reference against the
+   * invoice numbers the driver actually sees in Zarve, since this invoice's own number
+   * never matches anything there. Reconstructed by driver+vehicle+month, not a stored
+   * link, so it only ever lists the ones still unpaid/partial. */
+  sourceInvoices: InvoiceSourceZarveInvoice[];
 }
 
 export interface Payment {
@@ -492,6 +513,18 @@ export interface VendorPaymentPage {
 }
 
 // Reports: Aged Receivables & per-vehicle profitability
+export type AgedReceivableBucket = "current" | "d1to30" | "d31to60" | "d61to90" | "d90plus";
+
+export interface AgedReceivableInvoice {
+  invoiceId: number;
+  invoiceNumber: string;
+  invoiceDate: string;
+  totalAmount: number;
+  paid: number;
+  outstanding: number;
+  bucket: AgedReceivableBucket;
+}
+
 export interface AgedReceivablePartner {
   partnerId: number;
   partnerName: string;
@@ -501,6 +534,7 @@ export interface AgedReceivablePartner {
   d61to90: number;
   d90plus: number;
   total: number;
+  invoices: AgedReceivableInvoice[];
 }
 
 export interface AgedReceivablesResult {

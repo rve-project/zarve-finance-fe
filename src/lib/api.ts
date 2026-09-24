@@ -65,6 +65,19 @@ import {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001/api";
 const TOKEN_KEY = "rve_finance_token";
+
+/** Same as a plain Error (every existing `err instanceof Error` catch still works
+ * unchanged) but also carries the HTTP status, for the rare caller that needs to tell
+ * "genuinely not found" apart from other failures instead of pattern-matching the
+ * message string. */
+export class ApiClientError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiClientError";
+    this.status = status;
+  }
+}
 const UNIT_KEY = "rve_finance_business_unit";
 
 export function getToken(): string | null {
@@ -113,7 +126,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => null);
-    throw new Error(body?.message ?? `Gagal memanggil ${path} (${res.status})`);
+    throw new ApiClientError(body?.message ?? `Gagal memanggil ${path} (${res.status})`, res.status);
   }
   if (res.status === 204) return undefined as T;
   return res.json();
@@ -292,7 +305,7 @@ export const api = {
     memo?: string;
   }) => post<VendorPaymentPage["data"][number]>("/vendor-payments", data),
 
-  agedReceivables: (asOf?: string) => get<AgedReceivablesResult>(`/reports/aged-receivables${qs({ asOf })}`),
+  agedReceivables: (asOf?: string, partnerId?: number) => get<AgedReceivablesResult>(`/reports/aged-receivables${qs({ asOf, partnerId })}`),
   vehicleProfitability: (from: string, to: string) =>
     get<VehicleProfitabilityResult>(`/reports/vehicle-profitability${qs({ from, to })}`),
   geofenceViolations: (from: string, to: string, page = 1, limit = 20) =>

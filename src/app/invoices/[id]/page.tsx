@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { api } from "@/lib/api";
+import { ArrowLeft, FileX } from "lucide-react";
+import { api, ApiClientError } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { ZarveInvoiceDetail } from "@/lib/types";
@@ -32,14 +32,38 @@ export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<ZarveInvoiceDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     api
       .zarveInvoiceDetail(id)
       .then(setInvoice)
-      .catch((err) => setError(err instanceof Error ? err.message : t("invoiceDetail.errorLoading")));
+      .catch((err) => {
+        // A 404 here means the invoice genuinely doesn't exist in Zarve anymore
+        // (see zarveInvoicesController.detail) -- worth a distinct, calmer state
+        // instead of the generic red error banner used for real failures.
+        if (err instanceof ApiClientError && err.status === 404) {
+          setNotFound(true);
+          return;
+        }
+        setError(err instanceof Error ? err.message : t("invoiceDetail.errorLoading"));
+      });
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (notFound) {
+    return (
+      <div className="flex flex-col items-center rounded-xl border border-zinc-200 bg-white px-4 py-16 text-center">
+        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-zinc-100">
+          <FileX className="h-6 w-6 text-zinc-400" />
+        </div>
+        <p className="font-medium text-zinc-700">{t("invoiceDetail.notFoundTitle")}</p>
+        <p className="mt-1 max-w-sm text-xs text-zinc-400">{t("invoiceDetail.notFoundHint")}</p>
+        <Link href="/invoices" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:underline">
+          <ArrowLeft className="h-4 w-4" /> {t("invoiceDetail.backToList")}
+        </Link>
+      </div>
+    );
+  }
   if (error) return <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>;
   if (!invoice) return <p className="text-sm text-zinc-400">{t("common.loading")}</p>;
 

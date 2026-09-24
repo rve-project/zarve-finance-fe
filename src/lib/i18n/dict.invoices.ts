@@ -56,6 +56,11 @@ export const dictInvoices: Record<string, Record<"id" | "en", string>> = {
 
   // Invoice detail page (src/app/invoices/[id]/page.tsx)
   "invoiceDetail.errorLoading": { id: "Gagal memuat invoice", en: "Failed to load invoice" },
+  "invoiceDetail.notFoundTitle": { id: "Invoice ini sudah tidak ada", en: "This invoice no longer exists" },
+  "invoiceDetail.notFoundHint": {
+    id: "Kemungkinan sudah dihapus/dibatalkan di sistem Zarve. Invoice ini sudah dibersihkan dari daftar.",
+    en: "It was likely deleted/cancelled in the Zarve system. It has been removed from the list.",
+  },
   "invoiceDetail.backToList": { id: "Kembali ke daftar invoice", en: "Back to invoice list" },
   "invoiceDetail.driver": { id: "Driver", en: "Driver" },
   "invoiceDetail.nik": { id: "NIK", en: "NIK" },
@@ -75,4 +80,37 @@ export const dictInvoices: Record<string, Record<"id" | "en", string>> = {
   "invoiceDetail.discount": { id: "Diskon", en: "Discount" },
   "invoiceDetail.total": { id: "Total", en: "Total" },
   "invoiceDetail.paid": { id: "Dibayar", en: "Paid" },
+
+  // Local accounting invoice detail (src/app/finance-invoices/[id]/page.tsx) -- a
+  // completely separate concept from the Zarve-mirrored invoiceDetail.* above: this is
+  // OUR OWN posted invoice (feeds Trial Balance/GL/Aged Receivables), not a live read
+  // of Zarve's operational system.
+  "financeInvoiceDetail.back": { id: "Kembali", en: "Back" },
+  "financeInvoiceDetail.errorLoading": { id: "Gagal memuat invoice", en: "Failed to load invoice" },
+  "financeInvoiceDetail.partner": { id: "Driver / Customer", en: "Driver / Customer" },
+  "financeInvoiceDetail.vehicle": { id: "Kendaraan", en: "Vehicle" },
+  "financeInvoiceDetail.date": { id: "Tanggal Invoice", en: "Invoice Date" },
+  "financeInvoiceDetail.ref": { id: "Referensi", en: "Reference" },
+  "financeInvoiceDetail.statusDraft": { id: "Draft", en: "Draft" },
+  "financeInvoiceDetail.statusPosted": { id: "Posted", en: "Posted" },
+  "financeInvoiceDetail.total": { id: "Total", en: "Total" },
+  "financeInvoiceDetail.paid": { id: "Dibayar", en: "Paid" },
+  "financeInvoiceDetail.outstanding": { id: "Sisa", en: "Outstanding" },
+  "financeInvoiceDetail.lines": { id: "Rincian", en: "Line Items" },
+  "financeInvoiceDetail.colDescription": { id: "Deskripsi", en: "Description" },
+  "financeInvoiceDetail.colCategory": { id: "Kategori", en: "Category" },
+  "financeInvoiceDetail.colAccount": { id: "Akun", en: "Account" },
+  "financeInvoiceDetail.colAmount": { id: "Jumlah", en: "Amount" },
+  "financeInvoiceDetail.colTax": { id: "Pajak", en: "Tax" },
+  "financeInvoiceDetail.sourceInvoices": { id: "Riwayat Invoice Zarve", en: "Zarve Invoice History" },
+  "financeInvoiceDetail.sourceInvoicesHint": {
+    id: "Invoice ini adalah rekap bulanan -- berikut invoice harian asli di Zarve untuk periode ini yang masih outstanding (belum lunas di Zarve). Invoice harian yang sudah lunas tidak ditampilkan di sini.",
+    en: "This invoice is a monthly recap -- these are the original daily Zarve invoices for this period that are still outstanding (not fully paid in Zarve). Daily invoices already paid are not shown here.",
+  },
+  "financeInvoiceDetail.colInvoiceNumber": { id: "No. Invoice Zarve", en: "Zarve Invoice No." },
+  "financeInvoiceDetail.colDate": { id: "Tanggal", en: "Date" },
+  "financeInvoiceDetail.colStatus": { id: "Status", en: "Status" },
+  "financeInvoiceDetail.colTotalAmount": { id: "Total", en: "Total" },
+  "financeInvoiceDetail.colOutstanding": { id: "Sisa", en: "Outstanding" },
+  "financeInvoiceDetail.noSourceInvoices": { id: "Tidak ada invoice Zarve outstanding yang cocok untuk periode ini.", en: "No matching outstanding Zarve invoices for this period." },
 };

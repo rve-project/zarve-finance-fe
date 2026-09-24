@@ -1,35 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
 import { AgedReceivablesResult } from "@/lib/types";
+import { BUCKET_BADGE_CLASS, BUCKET_COLOR, BUCKET_LABEL_KEY } from "@/lib/agedReceivablesBuckets";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { DatePicker } from "@/components/ui/DatePicker";
-
-// Fixed status palette (never themed/reused) -- "current" isn't a severity yet, so it
-// gets a neutral gray instead of stretching the 4-step good/warning/serious/critical
-// scale to 5.
-const BUCKET_COLOR = {
-  current: "#9a9a9a",
-  d1to30: "#0ca30c",
-  d31to60: "#fab219",
-  d61to90: "#ec835a",
-  d90plus: "#d03b3b",
-};
-const BUCKET_LABEL_KEY: Record<keyof typeof BUCKET_COLOR, string> = {
-  current: "agedReceivables.bucket.current",
-  d1to30: "agedReceivables.bucket.d1to30",
-  d31to60: "agedReceivables.bucket.d31to60",
-  d61to90: "agedReceivables.bucket.d61to90",
-  d90plus: "agedReceivables.bucket.d90plus",
-};
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -40,6 +23,7 @@ export default function AgedReceivablesPage() {
   const [asOf, setAsOf] = useState(today());
   const [data, setData] = useState<AgedReceivablesResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   function load() {
     setLoading(true);
@@ -51,6 +35,15 @@ export default function AgedReceivablesPage() {
   }
 
   useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function toggleExpanded(partnerId: number) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(partnerId)) next.delete(partnerId);
+      else next.add(partnerId);
+      return next;
+    });
+  }
 
   return (
     <div>
@@ -128,21 +121,65 @@ export default function AgedReceivablesPage() {
                 </tr>
               </thead>
               <tbody>
-                {data.partners.map((p) => (
-                  <tr key={p.partnerId} className="border-b border-zinc-50 hover:bg-zinc-50">
-                    <td className="px-4 py-2.5 font-medium text-zinc-900">
-                      <Link href={`/partners/${p.partnerId}`} className="hover:text-emerald-600 hover:underline">
-                        {p.partnerName}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2.5 text-right">{p.current ? formatRupiah(p.current) : "-"}</td>
-                    <td className="px-4 py-2.5 text-right">{p.d1to30 ? formatRupiah(p.d1to30) : "-"}</td>
-                    <td className="px-4 py-2.5 text-right">{p.d31to60 ? formatRupiah(p.d31to60) : "-"}</td>
-                    <td className="px-4 py-2.5 text-right text-amber-700">{p.d61to90 ? formatRupiah(p.d61to90) : "-"}</td>
-                    <td className="px-4 py-2.5 text-right font-medium text-red-600">{p.d90plus ? formatRupiah(p.d90plus) : "-"}</td>
-                    <td className="px-4 py-2.5 text-right font-semibold">{formatRupiah(p.total)}</td>
-                  </tr>
-                ))}
+                {data.partners.map((p) => {
+                  const isExpanded = expanded.has(p.partnerId);
+                  return (
+                    <Fragment key={p.partnerId}>
+                      <tr onClick={() => toggleExpanded(p.partnerId)} className="cursor-pointer border-b border-zinc-50 hover:bg-zinc-50">
+                        <td className="px-4 py-2.5 font-medium text-zinc-900">
+                          <div className="flex items-center gap-1.5">
+                            {isExpanded ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-400" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-400" />}
+                            {p.partnerName}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2.5 text-right">{p.current ? formatRupiah(p.current) : "-"}</td>
+                        <td className="px-4 py-2.5 text-right">{p.d1to30 ? formatRupiah(p.d1to30) : "-"}</td>
+                        <td className="px-4 py-2.5 text-right">{p.d31to60 ? formatRupiah(p.d31to60) : "-"}</td>
+                        <td className="px-4 py-2.5 text-right text-amber-700">{p.d61to90 ? formatRupiah(p.d61to90) : "-"}</td>
+                        <td className="px-4 py-2.5 text-right font-medium text-red-600">{p.d90plus ? formatRupiah(p.d90plus) : "-"}</td>
+                        <td className="px-4 py-2.5 text-right font-semibold">{formatRupiah(p.total)}</td>
+                      </tr>
+                      {isExpanded && (
+                        <tr className="border-b border-zinc-50 bg-zinc-50/60">
+                          <td colSpan={7} className="px-4 py-3">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="text-left text-zinc-400">
+                                  <th className="px-3 py-1.5 font-medium">{t("agedReceivables.colInvoice")}</th>
+                                  <th className="px-3 py-1.5 font-medium">{t("agedReceivables.colDate")}</th>
+                                  <th className="px-3 py-1.5 font-medium">{t("agedReceivables.colBucket")}</th>
+                                  <th className="px-3 py-1.5 text-right font-medium">{t("agedReceivables.colTotalAmount")}</th>
+                                  <th className="px-3 py-1.5 text-right font-medium">{t("agedReceivables.colPaid")}</th>
+                                  <th className="px-3 py-1.5 text-right font-medium">{t("agedReceivables.colOutstanding")}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {p.invoices.map((inv) => (
+                                  <tr key={inv.invoiceId} className="border-t border-zinc-100">
+                                    <td className="px-3 py-1.5">
+                                      <Link href={`/finance-invoices/${inv.invoiceId}`} className="font-medium text-emerald-700 hover:underline">
+                                        {inv.invoiceNumber}
+                                      </Link>
+                                    </td>
+                                    <td className="px-3 py-1.5 text-zinc-500">{inv.invoiceDate}</td>
+                                    <td className="px-3 py-1.5">
+                                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${BUCKET_BADGE_CLASS[inv.bucket]}`}>
+                                        {t(BUCKET_LABEL_KEY[inv.bucket])}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-1.5 text-right text-zinc-500">{formatRupiah(inv.totalAmount)}</td>
+                                    <td className="px-3 py-1.5 text-right text-zinc-500">{formatRupiah(inv.paid)}</td>
+                                    <td className="px-3 py-1.5 text-right font-semibold text-zinc-900">{formatRupiah(inv.outstanding)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
                 {!data.partners.length && (
                   <tr>
                     <td colSpan={7} className="px-4 py-10 text-center text-sm text-zinc-400">

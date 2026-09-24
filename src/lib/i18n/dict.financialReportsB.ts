@@ -44,6 +44,13 @@ export const dictFinancialReportsB: Record<string, Record<Lang, string>> = {
   "agedReceivables.driverCustomer": { id: "Driver / Customer", en: "Driver / Customer" },
   "agedReceivables.total": { id: "Total", en: "Total" },
   "agedReceivables.emptyState": { id: "Tidak ada piutang belum tertagih.", en: "No uncollected receivables." },
+  "agedReceivables.colInvoice": { id: "Invoice", en: "Invoice" },
+  "agedReceivables.colDate": { id: "Tanggal", en: "Date" },
+  "agedReceivables.colBucket": { id: "Umur", en: "Age" },
+  "agedReceivables.colTotalAmount": { id: "Total Invoice", en: "Invoice Total" },
+  "agedReceivables.colPaid": { id: "Dibayar", en: "Paid" },
+  "agedReceivables.colOutstanding": { id: "Sisa", en: "Outstanding" },
+  "agedReceivables.viewInvoice": { id: "Lihat invoice", en: "View invoice" },
 
   // ---- Vehicle Profitability (Profitabilitas per Kendaraan) ----
   "vehicleProfitability.title": { id: "Profitabilitas per Kendaraan", en: "Profitability by Vehicle" },
