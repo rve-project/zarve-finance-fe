@@ -17,10 +17,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (loading) return;
-    if (!user && !isLoginPage) {
-      router.replace("/login");
-      return;
-    }
+    // Bounce-to-/login disabled for now (dev request) -- was kicking back to the login
+    // screen whenever /auth/me failed transiently (e.g. the dev DB container being down),
+    // not just when actually logged out.
+    // if (!user && !isLoginPage) {
+    //   router.replace("/login");
+    //   return;
+    // }
     if (user && isLoginPage) {
       router.replace("/");
     }
@@ -28,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (isLoginPage) return <>{children}</>;
 
-  if (loading || !user) {
+  if (loading) {
     return <div className="flex min-h-screen flex-1 items-center justify-center text-sm text-zinc-400">{t("common.loading")}</div>;
   }
 

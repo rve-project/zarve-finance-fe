@@ -11,6 +11,7 @@ export interface Account {
   description: string | null;
   categoryId: number | null;
   taxId: number | null;
+  bankName: string | null;
   accessMode: AccountAccessMode;
 }
 
@@ -34,6 +35,14 @@ export interface TaxCode {
   id: number;
   name: string;
   rate: number;
+  isActive: boolean;
+}
+
+/** "Nama bank" list for the Kas & Bank account create form -- editable via Settings,
+ * same pattern as TaxCode. */
+export interface Bank {
+  id: number;
+  name: string;
   isActive: boolean;
 }
 
@@ -613,6 +622,31 @@ export interface CashBankAccount {
   saldoBank: number;
 }
 
+export interface CashBankLedgerLine {
+  lineId: number;
+  date: string;
+  ref: string | null;
+  narration: string | null;
+  sourceType: string;
+  docNumber: string | null;
+  docKind: "purchase" | "sale" | "expense" | null;
+  docId: number | null;
+  lineDescription: string | null;
+  contactName: string | null;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+}
+
+export interface CashBankLedgerResult {
+  accountId: number;
+  total: number;
+  page: number;
+  limit: number;
+  endBalance: number;
+  lines: CashBankLedgerLine[];
+}
+
 export interface CashBankSummary {
   asOf: string;
   pemasukanMendatang: number;
@@ -866,17 +900,338 @@ export interface WarehouseTransfer {
 // balance tracking exists for B2B yet, so "Saldo" is always 0 for now.
 export type ContactType = "customer" | "vendor" | "employee" | "other";
 
+export type Citizenship = "wni" | "wna";
+
+export interface ContactBankAccount {
+  id: number;
+  bankName: string | null;
+  branch: string | null;
+  accountHolder: string | null;
+  accountNumber: string | null;
+}
+
 export interface Contact {
   id: number;
-  type: ContactType;
+  types: ContactType[];
   name: string;
+  salutation: string | null;
+  firstName: string | null;
+  middleName: string | null;
+  lastName: string | null;
   companyName: string | null;
   address: string | null;
+  shippingAddress: string | null;
   email: string | null;
   mobilePhone: string | null;
   phone: string | null;
+  fax: string | null;
+  citizenship: Citizenship;
   npwp: string | null;
+  idType: string | null;
+  idNumber: string | null;
+  nitku: string | null;
+  paymentTerm: string | null;
+  receivableAccountId: number | null;
+  payableAccountId: number | null;
   notes: string | null;
   isActive: boolean;
   createdAt: string;
+  bankAccounts: ContactBankAccount[];
+}
+
+export interface ExpenseLine {
+  id: number;
+  accountId: number;
+  accountName: string;
+  description: string | null;
+  taxId: number | null;
+  taxName: string | null;
+  taxRate: number | null;
+  amount: number;
+  taxAmount: number;
+}
+
+export interface Expense {
+  id: number;
+  number: string;
+  contactId: number | null;
+  contactName: string | null;
+  expenseDate: string;
+  paymentMethod: string | null;
+  bankAccountId: number | null;
+  bankAccountName: string | null;
+  payLater: boolean;
+  billingAddress: string | null;
+  tag: string | null;
+  memo: string | null;
+  discountAmount: number;
+  totalAmount: number;
+  outstanding: number;
+  categoryName?: string | null;
+  createdAt: string;
+}
+
+export interface ExpenseDetail extends Expense {
+  journalEntryId: number | null;
+  lines: ExpenseLine[];
+}
+
+export interface ExpenseStats {
+  monthTotal: number;
+  monthCount: number;
+  last30Total: number;
+  last30Count: number;
+  unpaidTotal: number;
+  unpaidCount: number;
+}
+
+export interface CreateExpenseLineInput {
+  accountId: number;
+  description?: string;
+  taxId?: number;
+  amount: number;
+  taxAmount: number;
+}
+
+export interface CreateExpenseInput {
+  contactId?: number;
+  expenseDate: string;
+  paymentMethod?: string;
+  bankAccountId?: number;
+  payLater: boolean;
+  billingAddress?: string;
+  tag?: string;
+  memo?: string;
+  discountAmount: number;
+  lines: CreateExpenseLineInput[];
+}
+
+// "Pembelian" (Purchases) -- the procurement pipeline: Permintaan -> Penawaran ->
+// Pemesanan -> Faktur (the only stage that posts to the ledger), plus Tukar Faktur and
+// Pengiriman as side documents. See rve-finance-be's migrations/038_purchases.sql.
+export type PurchaseDocType = "request" | "quotation" | "order" | "invoice" | "exchange" | "shipment";
+export type PurchaseStatus = "draft" | "pending_approval" | "approved" | "rejected";
+
+export interface PurchaseLine {
+  id: number;
+  productId: number | null;
+  productName: string | null;
+  accountId: number | null;
+  accountName: string | null;
+  description: string | null;
+  qty: number;
+  unitPrice: number;
+  taxId: number | null;
+  taxName: string | null;
+  taxRate: number | null;
+  amount: number;
+  taxAmount: number;
+  targetDocumentId: number | null;
+  targetDocumentNumber: string | null;
+}
+
+export interface PurchasePayment {
+  id: number;
+  bankAccountId: number;
+  bankAccountName: string;
+  amount: number;
+  paymentDate: string;
+  memo: string | null;
+  createdAt: string;
+}
+
+export interface PurchaseDocument {
+  id: number;
+  docType: PurchaseDocType;
+  number: string;
+  status: PurchaseStatus;
+  contactId: number | null;
+  contactName: string | null;
+  documentDate: string;
+  dueDate: string | null;
+  reference: string | null;
+  memo: string | null;
+  email: string | null;
+  billingAddress: string | null;
+  supplierRef: string | null;
+  tag: string | null;
+  customerNote: string | null;
+  paymentTerm: string | null;
+  warehouseId: number | null;
+  warehouseName: string | null;
+  discountAmount: number;
+  approverUserId: number | null;
+  approverEmail: string | null;
+  urgency: string | null;
+  budgetYear: string | null;
+  subtotal: number;
+  taxTotal: number;
+  totalAmount: number;
+  amountPaid: number;
+  amountCredited: number;
+  outstanding: number;
+  isOverdue: boolean;
+  convertedFromId: number | null;
+  submittedBy: number | null;
+  approvedBy: number | null;
+  approvedAt: string | null;
+  rejectedReason: string | null;
+  createdAt: string;
+}
+
+export interface PurchaseDocumentDetail extends PurchaseDocument {
+  journalEntryId: number | null;
+  lines: PurchaseLine[];
+  payments: PurchasePayment[];
+}
+
+export interface PurchaseStats {
+  unpaidTotal: number;
+  overdueTotal: number;
+  last30PaidTotal: number;
+}
+
+export interface CreatePurchaseLineInput {
+  productId?: number;
+  accountId?: number;
+  targetDocumentId?: number;
+  description?: string;
+  qty: number;
+  unitPrice: number;
+  taxId?: number;
+  amount: number;
+  taxAmount: number;
+}
+
+export interface CreatePurchaseInput {
+  contactId?: number;
+  documentDate: string;
+  dueDate?: string;
+  reference?: string;
+  memo?: string;
+  email?: string;
+  billingAddress?: string;
+  supplierRef?: string;
+  tag?: string;
+  customerNote?: string;
+  paymentTerm?: string;
+  warehouseId?: number;
+  approverUserId?: number;
+  approverEmail?: string;
+  urgency?: string;
+  budgetYear?: string;
+  discountAmount: number;
+  submitForApproval: boolean;
+  lines: CreatePurchaseLineInput[];
+}
+
+// "Penjualan" (Sales) -- mirrors the Purchases types above but for the revenue side
+// (no "request" doc type -- that's an internal-only concept on the buy side).
+// See rve-finance-be's migrations/039_sales.sql and 044_sale_exchange.sql.
+export type SaleDocType = "quotation" | "order" | "invoice" | "shipment" | "exchange";
+export type SaleStatus = "draft" | "pending_approval" | "approved" | "rejected";
+
+export interface SaleLine {
+  id: number;
+  productId: number | null;
+  productName: string | null;
+  accountId: number | null;
+  accountName: string | null;
+  description: string | null;
+  qty: number;
+  unitPrice: number;
+  taxId: number | null;
+  taxName: string | null;
+  taxRate: number | null;
+  amount: number;
+  taxAmount: number;
+  targetDocumentId: number | null;
+  targetDocumentNumber: string | null;
+}
+
+export interface SalePayment {
+  id: number;
+  bankAccountId: number;
+  bankAccountName: string;
+  amount: number;
+  paymentDate: string;
+  memo: string | null;
+  createdAt: string;
+}
+
+export interface SaleDocument {
+  id: number;
+  docType: SaleDocType;
+  number: string;
+  status: SaleStatus;
+  contactId: number | null;
+  contactName: string | null;
+  documentDate: string;
+  dueDate: string | null;
+  reference: string | null;
+  memo: string | null;
+  email: string | null;
+  billingAddress: string | null;
+  customerRef: string | null;
+  tag: string | null;
+  customerNote: string | null;
+  paymentTerm: string | null;
+  warehouseId: number | null;
+  warehouseName: string | null;
+  discountAmount: number;
+  subtotal: number;
+  taxTotal: number;
+  totalAmount: number;
+  amountPaid: number;
+  amountCredited: number;
+  outstanding: number;
+  isOverdue: boolean;
+  convertedFromId: number | null;
+  submittedBy: number | null;
+  approvedBy: number | null;
+  approvedAt: string | null;
+  rejectedReason: string | null;
+  createdAt: string;
+}
+
+export interface SaleDocumentDetail extends SaleDocument {
+  journalEntryId: number | null;
+  lines: SaleLine[];
+  payments: SalePayment[];
+}
+
+export interface SaleStats {
+  unpaidTotal: number;
+  overdueTotal: number;
+  last30PaidTotal: number;
+}
+
+export interface CreateSaleLineInput {
+  productId?: number;
+  accountId?: number;
+  description?: string;
+  qty: number;
+  unitPrice: number;
+  taxId?: number;
+  amount: number;
+  taxAmount: number;
+  targetDocumentId?: number;
+}
+
+export interface CreateSaleInput {
+  contactId?: number;
+  documentDate: string;
+  dueDate?: string;
+  reference?: string;
+  memo?: string;
+  email?: string;
+  billingAddress?: string;
+  customerRef?: string;
+  tag?: string;
+  customerNote?: string;
+  paymentTerm?: string;
+  warehouseId?: number;
+  discountAmount: number;
+  submitForApproval: boolean;
+  lines: CreateSaleLineInput[];
 }

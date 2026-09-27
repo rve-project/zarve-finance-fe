@@ -16,6 +16,9 @@ import { dictFixedAssets } from "./i18n/dict.fixedAssets";
 import { dictPemenuhan } from "./i18n/dict.pemenuhan";
 import { dictProduk } from "./i18n/dict.produk";
 import { dictContacts } from "./i18n/dict.contacts";
+import { dictExpenses } from "./i18n/dict.expenses";
+import { dictPurchases } from "./i18n/dict.purchases";
+import { dictSales } from "./i18n/dict.sales";
 
 export type Lang = "id" | "en";
 
@@ -39,32 +42,31 @@ const dict: Record<string, Record<Lang, string>> = {
   ...dictPemenuhan,
   ...dictProduk,
   ...dictContacts,
+  ...dictExpenses,
+  ...dictPurchases,
+  ...dictSales,
 
   // Sidebar sections
   "section.utama": { id: "Utama", en: "Main" },
   "section.operasionalB2b": { id: "Operasional", en: "Operations" },
-  "section.masterData": { id: "Master Data", en: "Master Data" },
+  "section.zarve": { id: "Zarve", en: "Zarve" },
   "section.akuntansi": { id: "Akuntansi", en: "Accounting" },
   "section.laporanKeuangan": { id: "Laporan Keuangan", en: "Financial Reports" },
   "section.administrasi": { id: "Administrasi", en: "Administration" },
 
   // Sidebar items
   "nav.beranda": { id: "Beranda", en: "Home" },
-  "nav.b2bDashboard": { id: "Dashboard B2B", en: "B2B Dashboard" },
   "nav.kasBank": { id: "Kas & Bank", en: "Cash & Bank" },
   "nav.kontak": { id: "Kontak", en: "Contacts" },
   "nav.daftarAkunB2b": { id: "Daftar Akun", en: "Chart of Accounts" },
   "nav.asetTetap": { id: "Aset", en: "Assets" },
   "nav.pemenuhan": { id: "Pemenuhan", en: "Fulfillment" },
   "nav.produk": { id: "Produk", en: "Products" },
-  "nav.pengaturanB2b": { id: "Pengaturan", en: "Settings" },
   "nav.invoice": { id: "Invoice", en: "Invoices" },
   "nav.rekapRevenue": { id: "Rekap Revenue", en: "Revenue Recap" },
   "nav.driverPartner": { id: "Driver / Partner", en: "Driver / Partner" },
   "nav.vendorSupplier": { id: "Vendor / Supplier", en: "Vendor / Supplier" },
   "nav.kendaraan": { id: "Kendaraan", en: "Vehicles" },
-  "nav.chartOfAccounts": { id: "Chart of Accounts", en: "Chart of Accounts" },
-  "nav.jurnalManual": { id: "Jurnal Manual", en: "Manual Journal" },
   "nav.tagihanVendor": { id: "Tagihan Vendor", en: "Vendor Bills" },
   "nav.rekonsiliasiBank": { id: "Rekonsiliasi Bank", en: "Bank Reconciliation" },
   "nav.trialBalance": { id: "Trial Balance", en: "Trial Balance" },
@@ -117,6 +119,9 @@ const dict: Record<string, Record<Lang, string>> = {
 
   // Beranda / dashboard
   "home.title": { id: "Beranda", en: "Dashboard" },
+  "home.combinedTitle": { id: "Ringkasan Gabungan (Zarve + B2B)", en: "Combined Summary (Zarve + B2B)" },
+  "home.zarveSectionTitle": { id: "Zarve", en: "Zarve" },
+  "home.b2bSectionTitle": { id: "B2B", en: "B2B" },
   "home.subtitle": { id: "Ringkasan operasional & keuangan -- data hasil sinkronisasi dari Zarve", en: "Operational & financial summary -- data synced from Zarve" },
   "home.unitType": { id: "Tipe Unit", en: "Unit Type" },
   "home.period": { id: "Periode", en: "Period" },
@@ -176,11 +181,6 @@ const dict: Record<string, Record<Lang, string>> = {
   "date.prevYear": { id: "Tahun sebelumnya", en: "Previous year" },
   "date.nextYear": { id: "Tahun berikutnya", en: "Next year" },
   "date.selectDate": { id: "Pilih tanggal", en: "Select date" },
-
-  // B2B Dashboard
-  "b2bDashboard.title": { id: "Dashboard B2B", en: "B2B Dashboard" },
-  "b2bDashboard.subtitle": { id: "Ringkasan keuangan untuk bisnis B2B", en: "Financial summary for the B2B business" },
-  "b2bDashboard.emptyState": { id: "Belum ada konten -- menyusul.", en: "No content yet -- coming soon." },
 
   // Pagination (shared component)
   "pagination.showing": { id: "Menampilkan", en: "Showing" },

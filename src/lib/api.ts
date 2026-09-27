@@ -4,6 +4,7 @@ import {
   AccountCategory,
   AccountDetail,
   AccountType,
+  Citizenship,
   Contact,
   ContactType,
   ActiveFixedAsset,
@@ -12,12 +13,29 @@ import {
   BalanceSheetResult,
   BankStatementImportResult,
   CashBankAccount,
+  CashBankLedgerResult,
   CashBankSummary,
   CashFlowResult,
   DepreciationScheduleResult,
   DisposedFixedAsset,
   DisposeAssetResult,
   DriverRevenueRecap,
+  Expense,
+  ExpenseDetail,
+  ExpenseStats,
+  CreateExpenseInput,
+  PurchaseDocType,
+  PurchaseStatus,
+  PurchaseDocument,
+  PurchaseDocumentDetail,
+  PurchaseStats,
+  CreatePurchaseInput,
+  SaleDocType,
+  SaleStatus,
+  SaleDocument,
+  SaleDocumentDetail,
+  SaleStats,
+  CreateSaleInput,
   GeneralLedgerResult,
   GeofenceViolationsResult,
   Invoice,
@@ -46,6 +64,7 @@ import {
   StockAdjustmentCategory,
   StockAdjustmentType,
   TaxCode,
+  Bank,
   WarehouseTransfer,
   TrialBalanceResult,
   UnreconciledPaymentPage,
@@ -97,9 +116,8 @@ export function clearToken() {
 
 /** Which of the client's two separate businesses (Zarve rental / B2B) the app is
  * currently scoped to. Read here (a plain module, not a component) so `request()` can
- * attach it to every call; the single writer is `BusinessUnitProvider`
- * (lib/business-unit.tsx), which calls `setBusinessUnit()` below to keep this the one
- * source of truth. */
+ * attach it to every call; `lib/business-unit.tsx`'s `useForceBusinessUnit` is the
+ * only writer (there's no user-facing switcher). */
 export function getBusinessUnit(): "zarve" | "b2b" {
   if (typeof window === "undefined") return "zarve";
   return window.localStorage.getItem(UNIT_KEY) === "b2b" ? "b2b" : "zarve";
@@ -133,6 +151,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 const get = <T>(path: string) => request<T>(path);
+
+/** For the Beranda page's combined Zarve+B2B summary, which needs both business
+ * units' numbers on the same page at the same time -- unlike everywhere else, an
+ * explicit unit here must NOT go through `getBusinessUnit()`/the global
+ * BusinessUnitProvider (that's one value for the whole app, and both sections' fetches
+ * run concurrently), so this passes "X-Business-Unit" straight through instead. */
+const getForUnit = <T>(path: string, unit: "zarve" | "b2b") => request<T>(path, { headers: { "X-Business-Unit": unit } });
 const post = <T>(path: string, data?: unknown) =>
   request<T>(path, { method: "POST", body: data !== undefined ? JSON.stringify(data) : undefined });
 const put = <T>(path: string, data: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(data) });
@@ -181,7 +206,7 @@ export const api = {
   updateUser: (id: number, data: { name?: string; aktif?: boolean }) => put<ManagedUser>(`/users/${id}`, data),
   deleteUser: (id: number) => del<void>(`/users/${id}`),
 
-  accounts: (type?: AccountType) => get<Account[]>(`/accounts${qs({ type })}`),
+  accounts: (type?: AccountType, category?: string) => get<Account[]>(`/accounts${qs({ type, category })}`),
   getAccount: (id: number) => get<AccountDetail>(`/accounts/${id}`),
   createAccount: (data: {
     code: string;
@@ -191,6 +216,7 @@ export const api = {
     parentId?: number;
     description?: string;
     taxId?: number;
+    bankName?: string;
     accessMode?: AccountAccessMode;
     accessUserIds?: number[];
   }) => post<AccountDetail>("/accounts", data),
@@ -206,6 +232,10 @@ export const api = {
   taxes: (includeArchived = false) => get<TaxCode[]>(`/taxes${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
   createTax: (data: { name: string; rate: number }) => post<TaxCode>("/taxes", data),
   updateTax: (id: number, data: Partial<Pick<TaxCode, "name" | "rate" | "isActive">>) => put<TaxCode>(`/taxes/${id}`, data),
+
+  banks: (includeArchived = false) => get<Bank[]>(`/banks${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
+  createBank: (data: { name: string }) => post<Bank>("/banks", data),
+  updateBank: (id: number, data: Partial<Pick<Bank, "name" | "isActive">>) => put<Bank>(`/banks/${id}`, data),
 
   partners: (params: { q?: string; page?: number; limit?: number; type?: "customer" | "vendor" }) =>
     get<PartnerPage>(`/partners${qs({ q: params.q, page: params.page, limit: params.limit, type: params.type })}`),
@@ -241,8 +271,12 @@ export const api = {
   generalLedger: (accountId: number, from: string, to: string, page = 1, limit = 50) =>
     get<GeneralLedgerResult>(`/reports/general-ledger${qs({ accountId, from, to, page, limit })}`),
   profitAndLoss: (from: string, to: string) => get<ProfitAndLossResult>(`/reports/profit-loss${qs({ from, to })}`),
+  profitAndLossForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
+    getForUnit<ProfitAndLossResult>(`/reports/profit-loss${qs({ from, to })}`, unit),
   balanceSheet: (asOf: string) => get<BalanceSheetResult>(`/reports/balance-sheet${qs({ asOf })}`),
   cashFlow: (from: string, to: string) => get<CashFlowResult>(`/reports/cash-flow${qs({ from, to })}`),
+  cashFlowForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
+    getForUnit<CashFlowResult>(`/reports/cash-flow${qs({ from, to })}`, unit),
 
   revenueRecap: (startDate: string, endDate: string) =>
     get<RevenueRecap>(`/revenue-recap${qs({ startDate, endDate })}`),
@@ -314,6 +348,8 @@ export const api = {
   cashBankAccounts: (includeArchived = false) =>
     get<CashBankAccount[]>(`/cash-bank/accounts${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
   cashBankSummary: () => get<CashBankSummary>("/cash-bank/summary"),
+  cashBankLedger: (accountId: number, params: { search?: string; page?: number; limit?: number } = {}) =>
+    get<CashBankLedgerResult>(`/cash-bank/accounts/${accountId}/ledger${qs({ search: params.search, page: params.page, limit: params.limit })}`),
   downloadCashBankTemplate: () => downloadFile("/cash-bank/import-template", "Template Impor Rekening Koran.xlsx"),
   importBankStatement: (accountId: number, file: File) => {
     const formData = new FormData();
@@ -429,14 +465,63 @@ export const api = {
   contacts: (params: { type?: ContactType; search?: string; includeArchived?: boolean } = {}) =>
     get<Contact[]>(`/contacts${qs({ type: params.type, search: params.search, includeArchived: params.includeArchived ? "true" : undefined })}`),
   createContact: (data: {
-    type: ContactType;
+    types: ContactType[];
     name: string;
+    salutation?: string;
+    firstName?: string;
+    middleName?: string;
+    lastName?: string;
     companyName?: string;
     address?: string;
+    shippingAddress?: string;
     email?: string;
     mobilePhone?: string;
     phone?: string;
+    fax?: string;
+    citizenship?: Citizenship;
     npwp?: string;
+    idType?: string;
+    idNumber?: string;
+    nitku?: string;
+    paymentTerm?: string;
+    receivableAccountId?: number;
+    payableAccountId?: number;
     notes?: string;
+    bankAccounts?: { bankName?: string; branch?: string; accountHolder?: string; accountNumber?: string }[];
   }) => post<Contact>("/contacts", data),
+
+  expenses: () => get<Expense[]>("/expenses"),
+  expenseStats: () => get<ExpenseStats>("/expenses/stats"),
+  getExpense: (id: number) => get<ExpenseDetail>(`/expenses/${id}`),
+  createExpense: (data: CreateExpenseInput) => post<ExpenseDetail>("/expenses", data),
+  updateExpense: (id: number, data: CreateExpenseInput) => put<ExpenseDetail>(`/expenses/${id}`, data),
+  deleteExpense: (id: number) => del<void>(`/expenses/${id}`),
+
+  purchases: (params: { docType?: PurchaseDocType; status?: PurchaseStatus; contactId?: number } = {}) =>
+    get<PurchaseDocument[]>(`/purchases${qs({ docType: params.docType, status: params.status, contactId: params.contactId })}`),
+  purchaseStats: () => get<PurchaseStats>("/purchases/stats"),
+  getPurchase: (id: number) => get<PurchaseDocumentDetail>(`/purchases/${id}`),
+  createPurchase: (docType: PurchaseDocType, data: CreatePurchaseInput) => post<PurchaseDocumentDetail>("/purchases", { ...data, docType }),
+  updatePurchase: (id: number, data: CreatePurchaseInput) => put<PurchaseDocumentDetail>(`/purchases/${id}`, data),
+  deletePurchase: (id: number) => del<void>(`/purchases/${id}`),
+  submitPurchase: (id: number) => post<PurchaseDocumentDetail>(`/purchases/${id}/submit`),
+  approvePurchase: (id: number) => post<PurchaseDocumentDetail>(`/purchases/${id}/approve`),
+  rejectPurchase: (id: number, reason?: string) => post<PurchaseDocumentDetail>(`/purchases/${id}/reject`, { reason }),
+  convertPurchase: (id: number, targetType: PurchaseDocType) => post<PurchaseDocumentDetail>(`/purchases/${id}/convert`, { targetType }),
+  addPurchasePayment: (id: number, data: { bankAccountId: number; amount: number; paymentDate: string; memo?: string }) =>
+    post<PurchaseDocumentDetail>(`/purchases/${id}/payments`, data),
+
+  sales: (params: { docType?: SaleDocType; status?: SaleStatus; contactId?: number } = {}) =>
+    get<SaleDocument[]>(`/sales${qs({ docType: params.docType, status: params.status, contactId: params.contactId })}`),
+  saleStats: () => get<SaleStats>("/sales/stats"),
+  getSale: (id: number) => get<SaleDocumentDetail>(`/sales/${id}`),
+  createSale: (docType: SaleDocType, data: CreateSaleInput) => post<SaleDocumentDetail>("/sales", { ...data, docType }),
+  updateSale: (id: number, data: CreateSaleInput) => put<SaleDocumentDetail>(`/sales/${id}`, data),
+  deleteSale: (id: number) => del<void>(`/sales/${id}`),
+  submitSale: (id: number) => post<SaleDocumentDetail>(`/sales/${id}/submit`),
+  approveSale: (id: number) => post<SaleDocumentDetail>(`/sales/${id}/approve`),
+  rejectSale: (id: number, reason?: string) => post<SaleDocumentDetail>(`/sales/${id}/reject`, { reason }),
+  convertSale: (id: number, targetType: SaleDocType) => post<SaleDocumentDetail>(`/sales/${id}/convert`, { targetType }),
+  addSalePayment: (id: number, data: { bankAccountId: number; amount: number; paymentDate: string; memo?: string }) =>
+    post<SaleDocumentDetail>(`/sales/${id}/payments`, data),
 };

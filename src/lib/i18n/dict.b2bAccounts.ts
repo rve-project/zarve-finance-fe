@@ -32,6 +32,8 @@ export const dictB2bAccounts: Record<string, Record<"id" | "en", string>> = {
   "b2bAccounts.new.name": { id: "Nama akun", en: "Account name" },
   "b2bAccounts.new.code": { id: "Kode akun", en: "Account code" },
   "b2bAccounts.new.category": { id: "Kategori akun", en: "Account category" },
+  "b2bAccounts.new.bankName": { id: "Nama bank", en: "Bank name" },
+  "b2bAccounts.new.bankNamePlaceholder": { id: "Pilih bank", en: "Select bank" },
   "b2bAccounts.new.isSubAccount": { id: "Buat akun ini bagian dari akun lain", en: "Make this account part of another account" },
   "b2bAccounts.new.hint.isSubAccount": {
     id: "Jadikan akun ini sub-akun dari akun lain, mis. \"Bank BCA\" di bawah \"Cash & Bank\".",

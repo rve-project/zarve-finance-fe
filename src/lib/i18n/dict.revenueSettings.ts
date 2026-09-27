@@ -58,6 +58,7 @@ export const dictRevenueSettings: Record<string, Record<Lang, string>> = {
   "revenueRecap.relative.hoursAgo": { id: "jam yang lalu", en: "hours ago" },
 
   // Settings page
+  "settings.tabUmum": { id: "Umum", en: "General" },
   "settings.subtitle": {
     id: "Konfigurasi default untuk proses sinkronisasi data rental dari Zarve",
     en: "Default configuration for syncing rental data from Zarve",

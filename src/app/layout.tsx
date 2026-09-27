@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 import { AuthProvider } from "@/lib/auth-context";
-import { BusinessUnitProvider } from "@/lib/business-unit";
 import { LanguageProvider } from "@/lib/i18n";
 import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
 
@@ -33,11 +32,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full bg-zinc-50 text-zinc-900">
         <LanguageProvider>
-          <BusinessUnitProvider>
-            <AuthProvider>
-              <AppShell>{children}</AppShell>
-            </AuthProvider>
-          </BusinessUnitProvider>
+          <AuthProvider>
+            <AppShell>{children}</AppShell>
+          </AuthProvider>
         </LanguageProvider>
       </body>
     </html>

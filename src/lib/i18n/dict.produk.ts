@@ -5,7 +5,6 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   "produk.title": { id: "Produk", en: "Products" },
   "produk.tabGoodsServices": { id: "Barang & jasa", en: "Goods & Services" },
   "produk.tabWarehouse": { id: "Gudang", en: "Warehouse" },
-  "produk.comingSoon": { id: "Segera hadir", en: "Coming soon" },
 
   "produk.summary.available": { id: "Stok tersedia", en: "Stock available" },
   "produk.summary.lowStock": { id: "Stok segera habis", en: "Stock running low" },
@@ -40,8 +39,6 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   "produk.adjustments.new.account": { id: "Akun", en: "Account" },
   "produk.adjustments.new.date": { id: "Tanggal", en: "Date" },
   "produk.adjustments.new.warehouse": { id: "Gudang", en: "Warehouse" },
-  "produk.adjustments.new.importHint": { id: "Butuh penyesuaian sekaligus?", en: "Need to adjust several at once?" },
-  "produk.adjustments.new.importLink": { id: "Impor data", en: "Import data" },
   "produk.adjustments.new.cancel": { id: "Batalkan", en: "Cancel" },
   "produk.adjustments.new.continue": { id: "Lanjutkan", en: "Continue" },
   "produk.adjustments.new.back": { id: "Kembali", en: "Back" },
@@ -117,9 +114,6 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   },
   "produk.form.minStockShort": { id: "Batas stok minimum", en: "Minimum stock threshold" },
   "produk.form.inventoryAccount": { id: "Akun persediaan barang default", en: "Default inventory account" },
-  "produk.form.trackByQtyOnly": { id: "Hanya lacak qty", en: "Track qty only" },
-  "produk.form.trackByBatch": { id: "Lacak berdasarkan batch", en: "Track by batch" },
-  "produk.form.trackBySerial": { id: "Lacak berdasarkan nomor seri", en: "Track by serial number" },
   "produk.form.trackingModeTrackDescBundle": {
     id: "Sistem akan mencatat nilai persediaan & qty bundle produk beserta komponennya",
     en: "The system will record inventory value & qty for the bundle and its components",

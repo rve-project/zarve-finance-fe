@@ -5,6 +5,7 @@ export const dictB2bSettings: Record<string, Record<"id" | "en", string>> = {
   "b2bSettings.subtitle": { id: "Kelola kategori akun dan pajak untuk bisnis B2B", en: "Manage account categories and taxes for the B2B business" },
   "b2bSettings.tabCategories": { id: "Kategori Akun", en: "Account Categories" },
   "b2bSettings.tabTaxes": { id: "Pajak", en: "Taxes" },
+  "b2bSettings.tabBanks": { id: "Bank", en: "Banks" },
 
   "b2bSettings.categories.colLabel": { id: "Label", en: "Label" },
   "b2bSettings.categories.colType": { id: "Tipe", en: "Type" },
@@ -24,6 +25,13 @@ export const dictB2bSettings: Record<string, Record<"id" | "en", string>> = {
   "b2bSettings.taxes.add": { id: "Tambah Pajak", en: "Add Tax" },
   "b2bSettings.taxes.empty": { id: "Belum ada pajak.", en: "No taxes yet." },
   "b2bSettings.taxes.errorSave": { id: "Gagal menyimpan pajak", en: "Failed to save tax" },
+
+  "b2bSettings.banks.colName": { id: "Nama Bank", en: "Bank Name" },
+  "b2bSettings.banks.colStatus": { id: "Status", en: "Status" },
+  "b2bSettings.banks.addName": { id: "Nama bank (mis. BCA)", en: "Bank name (e.g. BCA)" },
+  "b2bSettings.banks.add": { id: "Tambah Bank", en: "Add Bank" },
+  "b2bSettings.banks.empty": { id: "Belum ada bank.", en: "No banks yet." },
+  "b2bSettings.banks.errorSave": { id: "Gagal menyimpan bank", en: "Failed to save bank" },
 
   "b2bSettings.active": { id: "Aktif", en: "Active" },
   "b2bSettings.inactive": { id: "Nonaktif", en: "Inactive" },

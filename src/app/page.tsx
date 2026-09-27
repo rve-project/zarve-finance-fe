@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { TrendingUp, Car, Receipt, AlertTriangle } from "lucide-react";
+import { TrendingUp, Car, Receipt, AlertTriangle, Wallet, TrendingDown, Landmark } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -78,6 +78,71 @@ function monthRange(month: string) {
     startDate: `${month}-01`,
     endDate: isCurrentMonth ? now.toISOString().slice(0, 10) : `${month}-${String(lastDay).padStart(2, "0")}`,
   };
+}
+
+/** Combined Zarve+B2B summary at the top of Beranda, plus a dedicated "B2B" section
+ * below it -- both business units' numbers on one page, no toggle. Fetches each unit's
+ * P&L/cash-flow explicitly via `...ForUnit` (an explicit X-Business-Unit header per
+ * call, not the global business-unit context) since both units' data is needed at once
+ * on this one page. "Gabungan" is intentionally just 3 coarse totals: Zarve (car
+ * rental) and B2B use unrelated charts of accounts, so anything more granular (e.g. a
+ * combined P&L by account) would compare apples to oranges. */
+function FinanceSummarySections() {
+  const { t } = useLanguage();
+  const [zarve, setZarve] = useState<{ income: number; expense: number; cash: number } | null>(null);
+  const [b2b, setB2b] = useState<{ income: number; expense: number; cash: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const { startDate, endDate } = monthRange(currentMonth());
+    Promise.all([
+      api.profitAndLossForUnit(startDate, endDate, "zarve"),
+      api.cashFlowForUnit(startDate, endDate, "zarve"),
+      api.profitAndLossForUnit(startDate, endDate, "b2b"),
+      api.cashFlowForUnit(startDate, endDate, "b2b"),
+    ])
+      .then(([zarvePl, zarveCf, b2bPl, b2bCf]) => {
+        setZarve({ income: zarvePl.totalIncome, expense: zarvePl.totalExpense, cash: zarveCf.endingBalance });
+        setB2b({ income: b2bPl.totalIncome, expense: b2bPl.totalExpense, cash: b2bCf.endingBalance });
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const combined =
+    zarve && b2b
+      ? { income: zarve.income + b2b.income, expense: zarve.expense + b2b.expense, cash: zarve.cash + b2b.cash }
+      : null;
+
+  return (
+    <>
+      <div className="mb-6">
+        <p className="mb-3 text-sm font-semibold text-zinc-700">{t("home.combinedTitle")}</p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatTile icon={TrendingUp} iconClass="bg-emerald-50 text-emerald-600" label={t("profitLoss.totalIncome")} value={combined ? formatRupiah(combined.income) : loading ? "-" : formatRupiah(0)} />
+          <StatTile icon={TrendingDown} iconClass="bg-red-50 text-red-600" label={t("profitLoss.totalExpense")} value={combined ? formatRupiah(combined.expense) : loading ? "-" : formatRupiah(0)} />
+          <StatTile icon={Wallet} iconClass="bg-indigo-50 text-indigo-600" label={t("cashFlow.endingBalance")} value={combined ? formatRupiah(combined.cash) : loading ? "-" : formatRupiah(0)} />
+        </div>
+      </div>
+
+      <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Landmark className="h-4 w-4 text-zinc-400" />
+            <p className="text-sm font-semibold text-zinc-700">{t("home.b2bSectionTitle")}</p>
+          </div>
+          <Link href="/b2b-kas-bank" className="text-xs font-medium text-emerald-600 hover:underline">
+            {t("home.viewAll")} &rarr;
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatTile icon={TrendingUp} iconClass="bg-emerald-50 text-emerald-600" label={t("profitLoss.totalIncome")} value={b2b ? formatRupiah(b2b.income) : loading ? "-" : formatRupiah(0)} />
+          <StatTile icon={TrendingDown} iconClass="bg-red-50 text-red-600" label={t("profitLoss.totalExpense")} value={b2b ? formatRupiah(b2b.expense) : loading ? "-" : formatRupiah(0)} />
+          <StatTile icon={Wallet} iconClass="bg-indigo-50 text-indigo-600" label={t("cashFlow.endingBalance")} value={b2b ? formatRupiah(b2b.cash) : loading ? "-" : formatRupiah(0)} />
+        </div>
+      </div>
+    </>
+  );
 }
 
 export default function HomePage() {
@@ -220,6 +285,10 @@ export default function HomePage() {
   return (
     <div>
       <PageHeader title={t("home.title")} subtitle={t("home.subtitle")} />
+
+      <FinanceSummarySections />
+
+      <p className="mb-3 text-sm font-semibold text-zinc-700">{t("home.zarveSectionTitle")}</p>
 
       <div className="relative z-40 mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <label className="text-sm">
