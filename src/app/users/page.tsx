@@ -143,24 +143,6 @@ export default function UsersPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="mb-6 space-y-4 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input
-              required
-              type="email"
-              disabled={Boolean(editingUser)}
-              placeholder={t("users.emailPlaceholder")}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm disabled:bg-zinc-50 disabled:text-zinc-400"
-            />
-            <input
-              placeholder={t("users.namePlaceholder")}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            />
-          </div>
-
           <div>
             <span className="mb-1.5 block text-sm font-medium text-zinc-700">{t("users.accountType")}</span>
             <div className="flex gap-2">
@@ -186,6 +168,24 @@ export default function UsersPage() {
             <p className="mt-1 text-xs text-zinc-400">
               {accountType === "zarve" ? t("users.accountTypeZarveHint") : t("users.accountTypeLocalHint")}
             </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <input
+              required
+              type="email"
+              disabled={Boolean(editingUser)}
+              placeholder={accountType === "zarve" ? t("users.emailPlaceholder") : t("users.emailPlaceholderLocal")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm disabled:bg-zinc-50 disabled:text-zinc-400"
+            />
+            <input
+              placeholder={accountType === "zarve" ? t("users.namePlaceholder") : t("users.namePlaceholderLocal")}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            />
           </div>
 
           {accountType === "local" && (

@@ -10,6 +10,8 @@ export const dictUsers: Record<string, Record<"id" | "en", string>> = {
   "users.cancel": { id: "Batal", en: "Cancel" },
   "users.emailPlaceholder": { id: "Email akun Zarve", en: "Zarve account email" },
   "users.namePlaceholder": { id: "Nama (opsional, diisi otomatis dari Zarve)", en: "Name (optional, filled from Zarve)" },
+  "users.emailPlaceholderLocal": { id: "Email", en: "Email" },
+  "users.namePlaceholderLocal": { id: "Nama lengkap", en: "Full name" },
   "users.save": { id: "Simpan", en: "Save" },
   "users.errorSaving": { id: "Gagal menyimpan user", en: "Failed to save user" },
   "users.colName": { id: "Nama", en: "Name" },
