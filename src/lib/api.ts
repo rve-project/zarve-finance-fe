@@ -376,6 +376,8 @@ export const api = {
 
   cashBankAccounts: (includeArchived = false) =>
     get<CashBankAccount[]>(`/cash-bank/accounts${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
+  cashBankAccountsForUnit: (unit: "zarve" | "b2b", includeArchived = false) =>
+    getForUnit<CashBankAccount[]>(`/cash-bank/accounts${qs({ includeArchived: includeArchived ? "true" : undefined })}`, unit),
   cashBankSummary: () => get<CashBankSummary>("/cash-bank/summary"),
   cashBankLedger: (accountId: number, params: { search?: string; page?: number; limit?: number } = {}) =>
     get<CashBankLedgerResult>(`/cash-bank/accounts/${accountId}/ledger${qs({ search: params.search, page: params.page, limit: params.limit })}`),
@@ -531,6 +533,7 @@ export const api = {
   }) => post<Contact>("/contacts", data),
 
   expenses: () => get<Expense[]>("/expenses"),
+  expensesForUnit: (unit: "zarve" | "b2b") => getForUnit<Expense[]>("/expenses", unit),
   expenseStats: () => get<ExpenseStats>("/expenses/stats"),
   getExpense: (id: number) => get<ExpenseDetail>(`/expenses/${id}`),
   createExpense: (data: CreateExpenseInput) => post<ExpenseDetail>("/expenses", data),
@@ -539,6 +542,8 @@ export const api = {
 
   purchases: (params: { docType?: PurchaseDocType; status?: PurchaseStatus; contactId?: number } = {}) =>
     get<PurchaseDocument[]>(`/purchases${qs({ docType: params.docType, status: params.status, contactId: params.contactId })}`),
+  purchasesForUnit: (unit: "zarve" | "b2b", params: { docType?: PurchaseDocType; status?: PurchaseStatus; contactId?: number } = {}) =>
+    getForUnit<PurchaseDocument[]>(`/purchases${qs({ docType: params.docType, status: params.status, contactId: params.contactId })}`, unit),
   purchaseStats: () => get<PurchaseStats>("/purchases/stats"),
   getPurchase: (id: number) => get<PurchaseDocumentDetail>(`/purchases/${id}`),
   createPurchase: (docType: PurchaseDocType, data: CreatePurchaseInput) => post<PurchaseDocumentDetail>("/purchases", { ...data, docType }),
@@ -553,6 +558,8 @@ export const api = {
 
   sales: (params: { docType?: SaleDocType; status?: SaleStatus; contactId?: number } = {}) =>
     get<SaleDocument[]>(`/sales${qs({ docType: params.docType, status: params.status, contactId: params.contactId })}`),
+  salesForUnit: (unit: "zarve" | "b2b", params: { docType?: SaleDocType; status?: SaleStatus; contactId?: number } = {}) =>
+    getForUnit<SaleDocument[]>(`/sales${qs({ docType: params.docType, status: params.status, contactId: params.contactId })}`, unit),
   saleStats: () => get<SaleStats>("/sales/stats"),
   getSale: (id: number) => get<SaleDocumentDetail>(`/sales/${id}`),
   createSale: (docType: SaleDocType, data: CreateSaleInput) => post<SaleDocumentDetail>("/sales", { ...data, docType }),

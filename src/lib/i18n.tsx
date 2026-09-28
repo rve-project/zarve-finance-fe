@@ -162,6 +162,17 @@ const dict: Record<string, Record<Lang, string>> = {
   "home.statusRefunded": { id: "Refund", en: "Refunded" },
   "home.otherBranch": { id: "Lainnya", en: "Other" },
   "home.errorLoading": { id: "Gagal memuat data dashboard", en: "Failed to load dashboard data" },
+  "home.deltaHint": { id: "Persentase perubahan dibandingkan bulan lalu.", en: "Percent change vs. last month." },
+  "home.arOutstanding": { id: "Piutang Usaha (B2B)", en: "Accounts Receivable (B2B)" },
+  "home.apOutstanding": { id: "Utang Usaha (B2B)", en: "Accounts Payable (B2B)" },
+  "home.expenseByCategory": { id: "Pengeluaran per Kategori", en: "Expenses by Category" },
+  "home.cashBankByAccount": { id: "Saldo per Rekening", en: "Balance by Account" },
+  "home.topCustomersB2b": { id: "Top Pelanggan B2B", en: "Top B2B Customers" },
+  "home.topSuppliersB2b": { id: "Top Supplier B2B", en: "Top B2B Suppliers" },
+  "home.noDataThisMonth": { id: "Belum ada data bulan ini", en: "No data yet this month" },
+  "home.noName": { id: "Tanpa Nama", en: "No Name" },
+  "home.otherCategory": { id: "Lainnya", en: "Other" },
+  "home.otherAccounts": { id: "Lainnya", en: "Other" },
 
   // Date/month pickers (shared components)
   "date.month0": { id: "Januari", en: "January" },
