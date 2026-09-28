@@ -15,7 +15,10 @@ import {
   BankStatementImportResult,
   CashBankAccount,
   CashBankLedgerResult,
+  CashBankReconciliationHistoryPage,
+  CashBankReconciliationRunResult,
   CashBankSummary,
+  UnreconciledCashBankLinePage,
   CashFlowResult,
   DepreciationScheduleResult,
   DisposedFixedAsset,
@@ -165,6 +168,8 @@ const get = <T>(path: string) => request<T>(path);
 const getForUnit = <T>(path: string, unit: "zarve" | "b2b") => request<T>(path, { headers: { "X-Business-Unit": unit } });
 const post = <T>(path: string, data?: unknown) =>
   request<T>(path, { method: "POST", body: data !== undefined ? JSON.stringify(data) : undefined });
+const postForUnit = <T>(path: string, data: unknown, unit: "zarve" | "b2b") =>
+  request<T>(path, { method: "POST", body: JSON.stringify(data), headers: { "X-Business-Unit": unit } });
 const put = <T>(path: string, data: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(data) });
 const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 
@@ -213,6 +218,8 @@ export const api = {
   deleteUser: (id: number) => del<void>(`/users/${id}`),
 
   accounts: (type?: AccountType, category?: string) => get<Account[]>(`/accounts${qs({ type, category })}`),
+  accountsForUnit: (unit: "zarve" | "b2b", type?: AccountType, category?: string) =>
+    getForUnit<Account[]>(`/accounts${qs({ type, category })}`, unit),
   getAccount: (id: number) => get<AccountDetail>(`/accounts/${id}`),
   createAccount: (data: {
     code: string;
@@ -276,12 +283,17 @@ export const api = {
     get<ReconciliationHistoryPage>(`/reconciliation/history${qs({ page, limit })}`),
 
   trialBalance: (from: string, to: string) => get<TrialBalanceResult>(`/reports/trial-balance${qs({ from, to })}`),
+  trialBalanceForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
+    getForUnit<TrialBalanceResult>(`/reports/trial-balance${qs({ from, to })}`, unit),
   generalLedger: (accountId: number, from: string, to: string, page = 1, limit = 50) =>
     get<GeneralLedgerResult>(`/reports/general-ledger${qs({ accountId, from, to, page, limit })}`),
+  generalLedgerForUnit: (accountId: number, from: string, to: string, page = 1, limit = 50, unit: "zarve" | "b2b" = "zarve") =>
+    getForUnit<GeneralLedgerResult>(`/reports/general-ledger${qs({ accountId, from, to, page, limit })}`, unit),
   profitAndLoss: (from: string, to: string) => get<ProfitAndLossResult>(`/reports/profit-loss${qs({ from, to })}`),
   profitAndLossForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
     getForUnit<ProfitAndLossResult>(`/reports/profit-loss${qs({ from, to })}`, unit),
   balanceSheet: (asOf: string) => get<BalanceSheetResult>(`/reports/balance-sheet${qs({ asOf })}`),
+  balanceSheetForUnit: (asOf: string, unit: "zarve" | "b2b") => getForUnit<BalanceSheetResult>(`/reports/balance-sheet${qs({ asOf })}`, unit),
   cashFlow: (from: string, to: string) => get<CashFlowResult>(`/reports/cash-flow${qs({ from, to })}`),
   cashFlowForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
     getForUnit<CashFlowResult>(`/reports/cash-flow${qs({ from, to })}`, unit),
@@ -320,10 +332,19 @@ export const api = {
 
   journalEntries: (page = 1, limit = 20, from?: string, to?: string) =>
     get<JournalEntryPage>(`/journal-entries${qs({ page, limit, from, to })}`),
+  journalEntriesForUnit: (unit: "zarve" | "b2b", page = 1, limit = 20, from?: string, to?: string) =>
+    getForUnit<JournalEntryPage>(`/journal-entries${qs({ page, limit, from, to })}`, unit),
   getJournalEntry: (id: number) => get<JournalEntryDetail>(`/journal-entries/${id}`),
+  getJournalEntryForUnit: (unit: "zarve" | "b2b", id: number) => getForUnit<JournalEntryDetail>(`/journal-entries/${id}`, unit),
   createJournalEntry: (data: { date: string; ref?: string; narration?: string; lines: JournalLineInput[] }) =>
     post<{ id: number }>("/journal-entries", data),
+  createJournalEntryForUnit: (
+    unit: "zarve" | "b2b",
+    data: { date: string; ref?: string; narration?: string; lines: JournalLineInput[] }
+  ) => postForUnit<{ id: number }>("/journal-entries", data, unit),
   reverseJournalEntry: (id: number) => post<{ id: number }>(`/journal-entries/${id}/reverse`),
+  reverseJournalEntryForUnit: (unit: "zarve" | "b2b", id: number) =>
+    postForUnit<{ id: number }>(`/journal-entries/${id}/reverse`, undefined, unit),
 
   vendorBills: (params: { vendorId?: number; page?: number; limit?: number } = {}) =>
     get<VendorBillPage>(`/vendor-bills${qs(params)}`),
@@ -358,6 +379,12 @@ export const api = {
   cashBankSummary: () => get<CashBankSummary>("/cash-bank/summary"),
   cashBankLedger: (accountId: number, params: { search?: string; page?: number; limit?: number } = {}) =>
     get<CashBankLedgerResult>(`/cash-bank/accounts/${accountId}/ledger${qs({ search: params.search, page: params.page, limit: params.limit })}`),
+  cashBankUnreconciled: (accountId: number, page = 1, limit = 50) =>
+    get<UnreconciledCashBankLinePage>(`/cash-bank/accounts/${accountId}/unreconciled${qs({ page, limit })}`),
+  reconcileCashBankAccount: (accountId: number, body: { lineIds?: number[]; all?: boolean; date: string }) =>
+    post<CashBankReconciliationRunResult>(`/cash-bank/accounts/${accountId}/reconcile`, body),
+  cashBankReconciliationHistory: (accountId: number, page = 1, limit = 20) =>
+    get<CashBankReconciliationHistoryPage>(`/cash-bank/accounts/${accountId}/reconciliation-history${qs({ page, limit })}`),
   downloadCashBankTemplate: () => downloadFile("/cash-bank/import-template", "Template Impor Rekening Koran.xlsx"),
   importBankStatement: (accountId: number, file: File) => {
     const formData = new FormData();

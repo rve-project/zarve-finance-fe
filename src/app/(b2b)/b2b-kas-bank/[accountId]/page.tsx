@@ -7,9 +7,14 @@ import { ChevronDown, Search } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
-import { CashBankAccount, CashBankLedgerLine } from "@/lib/types";
+import { CashBankAccount, CashBankLedgerLine, CashBankReconciliationRunResult } from "@/lib/types";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Pagination } from "@/components/ui/Pagination";
+import { DatePicker } from "@/components/ui/DatePicker";
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const SOURCE_LABEL_KEY: Record<string, string> = {
   purchase_invoice: "kasBank.sourcePurchaseInvoice",
@@ -94,11 +99,38 @@ export default function CashBankLedgerPage() {
   const [error, setError] = useState<string | null>(null);
   const limit = 25;
 
+  // Bank reconciliation (D'Consulting audit gap #8 for B2B) -- tick-and-go, no journal
+  // entry posted. `selected` only ever holds currently-unreconciled line ids visible on
+  // this page; `allMode` selects every unreconciled line for this account regardless of
+  // page/search, resolved server-side at confirm time (mirrors /reconciliation's Zarve
+  // pattern in reconciliation.controller.ts).
+  const [unreconciledTotal, setUnreconciledTotal] = useState(0);
+  const [unreconciledTotalAmount, setUnreconciledTotalAmount] = useState(0);
+  const [selected, setSelected] = useState<Map<number, number>>(new Map());
+  const [allMode, setAllMode] = useState(false);
+  const [reconcileDate, setReconcileDate] = useState(today());
+  const [confirming, setConfirming] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState<CashBankReconciliationRunResult | null>(null);
+  const [reconcileError, setReconcileError] = useState<string | null>(null);
+
   useEffect(() => {
     api.cashBankAccounts(true).then((accounts) => setAccount(accounts.find((a) => a.id === Number(accountId)) ?? null)).catch(() => {});
   }, [accountId]);
 
-  useEffect(() => {
+  function loadUnreconciledCount() {
+    api
+      .cashBankUnreconciled(Number(accountId), 1, 1)
+      .then((res) => {
+        setUnreconciledTotal(res.total);
+        setUnreconciledTotalAmount(res.totalAmount);
+      })
+      .catch(() => {});
+  }
+
+  useEffect(loadUnreconciledCount, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function loadLedger() {
     setLoading(true);
     api
       .cashBankLedger(Number(accountId), { search: search || undefined, page, limit })
@@ -109,9 +141,71 @@ export default function CashBankLedgerPage() {
       })
       .catch((err) => setError(err instanceof Error ? err.message : t("kasBank.errorSave")))
       .finally(() => setLoading(false));
-  }, [accountId, search, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
+
+  useEffect(loadLedger, [accountId, search, page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = useMemo(() => lines, [lines]);
+  const unreconciledOnPage = rows.filter((l) => !l.reconciledAt);
+  const pageAllSelected = unreconciledOnPage.length > 0 && unreconciledOnPage.every((l) => selected.has(l.lineId));
+
+  function toggleOne(line: CashBankLedgerLine) {
+    if (line.reconciledAt) return;
+    setAllMode(false);
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (next.has(line.lineId)) next.delete(line.lineId);
+      else next.set(line.lineId, line.debit - line.credit);
+      return next;
+    });
+  }
+
+  function toggleAllOnPage() {
+    setAllMode(false);
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (pageAllSelected) {
+        unreconciledOnPage.forEach((l) => next.delete(l.lineId));
+      } else {
+        unreconciledOnPage.forEach((l) => next.set(l.lineId, l.debit - l.credit));
+      }
+      return next;
+    });
+  }
+
+  function handleSelectAllUnreconciled() {
+    setAllMode(true);
+    setSelected(new Map());
+  }
+
+  function handleClearSelection() {
+    setAllMode(false);
+    setSelected(new Map());
+  }
+
+  const selectedCount = allMode ? unreconciledTotal : selected.size;
+  const selectedTotal = allMode ? unreconciledTotalAmount : Array.from(selected.values()).reduce((s, v) => s + v, 0);
+
+  async function handleConfirmReconcile() {
+    setReconciling(true);
+    setReconcileError(null);
+    try {
+      const res = await api.reconcileCashBankAccount(Number(accountId), {
+        date: reconcileDate,
+        all: allMode || undefined,
+        lineIds: allMode ? undefined : Array.from(selected.keys()),
+      });
+      setReconcileResult(res);
+      setConfirming(false);
+      handleClearSelection();
+      loadLedger();
+      loadUnreconciledCount();
+    } catch (err) {
+      setReconcileError(err instanceof Error ? err.message : t("kasBank.errorSave"));
+    } finally {
+      setReconciling(false);
+    }
+  }
 
   return (
     <div>
@@ -128,8 +222,30 @@ export default function CashBankLedgerPage() {
       </div>
 
       {error && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+      {reconcileError && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{reconcileError}</p>}
+      {reconcileResult && (
+        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          {t("kasBank.reconcileResultSuccess")
+            .replace("{count}", reconcileResult.lineCount.toLocaleString("id-ID"))
+            .replace("{amount}", formatRupiah(reconcileResult.totalAmount))}
+        </div>
+      )}
 
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={handleSelectAllUnreconciled}
+            disabled={loading || unreconciledTotal === 0}
+            className="rounded-lg border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"
+          >
+            {t("kasBank.selectAllUnreconciled").replace("{count}", unreconciledTotal.toLocaleString("id-ID"))}
+          </button>
+          {(allMode || selected.size > 0) && (
+            <button onClick={handleClearSelection} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50">
+              {t("reconciliation.clearSelection")}
+            </button>
+          )}
+        </div>
         <div className="relative w-full sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
@@ -148,6 +264,15 @@ export default function CashBankLedgerPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 text-left text-zinc-500">
+              <th className="w-10 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={allMode || pageAllSelected}
+                  onChange={toggleAllOnPage}
+                  disabled={unreconciledOnPage.length === 0}
+                  className="h-4 w-4 rounded border-zinc-300"
+                />
+              </th>
               <th className="px-4 py-3 font-medium">{t("purchases.colDate")}</th>
               <th className="px-4 py-3 font-medium">{t("kasBank.colTransaction")}</th>
               <th className="px-4 py-3 font-medium">{t("kasBank.colContact")}</th>
@@ -161,6 +286,15 @@ export default function CashBankLedgerPage() {
           <tbody>
             {rows.map((line) => (
               <tr key={line.lineId} className="border-b border-zinc-50">
+                <td className="px-4 py-2.5">
+                  <input
+                    type="checkbox"
+                    checked={!line.reconciledAt && (allMode || selected.has(line.lineId))}
+                    onChange={() => toggleOne(line)}
+                    disabled={!!line.reconciledAt || allMode}
+                    className="h-4 w-4 rounded border-zinc-300"
+                  />
+                </td>
                 <td className="px-4 py-2.5 text-zinc-500">{formatDate(line.date)}</td>
                 <td className="px-4 py-2.5">
                   <p className="font-medium text-emerald-700">{lineTitle(t, line)}</p>
@@ -171,9 +305,15 @@ export default function CashBankLedgerPage() {
                 <td className="px-4 py-2.5 text-right">{line.credit ? formatRupiah(line.credit) : "-"}</td>
                 <td className="px-4 py-2.5 text-right font-medium">{formatRupiah(line.runningBalance)}</td>
                 <td className="px-4 py-2.5">
-                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600">
-                    {t("kasBank.statusUnreconciled")}
-                  </span>
+                  {line.reconciledAt ? (
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                      {t("kasBank.statusReconciled")}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                      {t("kasBank.statusUnreconciled")}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-2.5 text-right">
                   <ActionMenu line={line} />
@@ -182,7 +322,7 @@ export default function CashBankLedgerPage() {
             ))}
             {!loading && !rows.length && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-zinc-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-zinc-400">
                   {t("kasBank.emptyLedger")}
                 </td>
               </tr>
@@ -192,6 +332,50 @@ export default function CashBankLedgerPage() {
       </div>
 
       <Pagination page={page} limit={limit} total={total} onChange={setPage} loading={loading} itemLabel={t("kasBank.colTransaction")} />
+
+      {selectedCount > 0 && (
+        <div className="sticky bottom-4 mt-6 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-white p-4 shadow-lg sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-zinc-500">
+              {selectedCount.toLocaleString("id-ID")} {t("kasBank.linesSelected")}
+            </p>
+            <p className="text-lg font-bold text-emerald-600">{formatRupiah(selectedTotal)}</p>
+          </div>
+          {!confirming ? (
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <label className="text-sm">
+                <span className="mb-1 block text-zinc-600">{t("kasBank.reconcileDateLabel")}</span>
+                <DatePicker value={reconcileDate} onChange={setReconcileDate} maxDate={today()} />
+              </label>
+              <button
+                onClick={() => setConfirming(true)}
+                className="w-full rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:w-auto"
+              >
+                {t("kasBank.reconcileNow")}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <span className="text-sm text-zinc-600">{t("kasBank.reconcileConfirmPrompt")}</span>
+              <div className="flex w-full gap-3 sm:w-auto">
+                <button
+                  onClick={handleConfirmReconcile}
+                  disabled={reconciling}
+                  className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 sm:flex-none"
+                >
+                  {reconciling ? t("reconciliation.processing") : t("reconciliation.confirmYes")}
+                </button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  className="flex-1 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 sm:flex-none"
+                >
+                  {t("reconciliation.cancel")}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

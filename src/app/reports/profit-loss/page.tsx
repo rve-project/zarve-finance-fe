@@ -6,11 +6,12 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah, defaultReportRange } from "@/lib/format";
-import { ProfitAndLossResult } from "@/lib/types";
+import { BusinessUnit, ProfitAndLossResult } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
 
 const INCOME_COLOR = "#0ca30c";
 const EXPENSE_COLOR = "#d03b3b";
@@ -21,6 +22,7 @@ function axisTick(v: number) {
 
 export default function ProfitAndLossPage() {
   const { t } = useLanguage();
+  const [unit, setUnit] = useState<BusinessUnit>("b2b");
   const [range, setRange] = useState(defaultReportRange());
   const [data, setData] = useState<ProfitAndLossResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,17 +30,17 @@ export default function ProfitAndLossPage() {
   function load() {
     setLoading(true);
     api
-      .profitAndLoss(range.from, range.to)
+      .profitAndLossForUnit(range.from, range.to, unit)
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
-      <PageHeader title={t("profitLoss.title")} subtitle={t("profitLoss.subtitle")} />
+      <PageHeader title={t("profitLoss.title")} subtitle={t("profitLoss.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
 
       <div className="relative z-40 mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <label className="text-sm">

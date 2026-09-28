@@ -639,6 +639,7 @@ export interface CashBankLedgerLine {
   debit: number;
   credit: number;
   runningBalance: number;
+  reconciledAt: string | null;
 }
 
 export interface CashBankLedgerResult {
@@ -648,6 +649,49 @@ export interface CashBankLedgerResult {
   limit: number;
   endBalance: number;
   lines: CashBankLedgerLine[];
+}
+
+// D'Consulting audit gap #8 for B2B -- tick-and-go bank reconciliation, no journal entry
+// posted (B2B lines already sit on their final bank account). See rve-finance-be's
+// cashBank.controller.ts unreconciledLines/reconcile/reconciliationHistory.
+export interface UnreconciledCashBankLine {
+  lineId: number;
+  date: string;
+  ref: string | null;
+  narration: string | null;
+  sourceType: string;
+  lineDescription: string | null;
+  amount: number;
+}
+
+export interface UnreconciledCashBankLinePage {
+  total: number;
+  totalAmount: number;
+  page: number;
+  limit: number;
+  data: UnreconciledCashBankLine[];
+}
+
+export interface CashBankReconciliationRunResult {
+  batchId: number;
+  totalAmount: number;
+  lineCount: number;
+}
+
+export interface CashBankReconciliationHistoryEntry {
+  id: number;
+  reconciliationDate: string;
+  totalAmount: number;
+  lineCount: number;
+  createdByName: string | null;
+  createdAt: string;
+}
+
+export interface CashBankReconciliationHistoryPage {
+  total: number;
+  page: number;
+  limit: number;
+  data: CashBankReconciliationHistoryEntry[];
 }
 
 export interface CashBankSummary {

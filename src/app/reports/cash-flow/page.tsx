@@ -6,11 +6,12 @@ import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, 
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah, defaultReportRange } from "@/lib/format";
-import { CashFlowResult } from "@/lib/types";
+import { BusinessUnit, CashFlowResult } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
 
 const IN_COLOR = "#0ca30c";
 const OUT_COLOR = "#d03b3b";
@@ -22,6 +23,7 @@ function axisTick(v: number) {
 
 export default function CashFlowPage() {
   const { t } = useLanguage();
+  const [unit, setUnit] = useState<BusinessUnit>("b2b");
   const [range, setRange] = useState(defaultReportRange());
   const [data, setData] = useState<CashFlowResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,19 +31,20 @@ export default function CashFlowPage() {
   function load() {
     setLoading(true);
     api
-      .cashFlow(range.from, range.to)
+      .cashFlowForUnit(range.from, range.to, unit)
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
       <PageHeader
         title={t("cashFlow.title")}
         subtitle={t("cashFlow.subtitle")}
+        action={<BusinessUnitToggle value={unit} onChange={setUnit} />}
       />
 
       <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4">

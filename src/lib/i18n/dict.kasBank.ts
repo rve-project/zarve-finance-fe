@@ -76,6 +76,19 @@ export const dictKasBank: Record<string, Record<"id" | "en", string>> = {
   "kasBank.colStatus": { id: "Status", en: "Status" },
   "kasBank.colAction": { id: "Tindakan", en: "Action" },
   "kasBank.statusUnreconciled": { id: "Belum terekonsiliasi", en: "Unreconciled" },
+
+  // D'Consulting audit gap #8 for B2B -- tick-and-go bank reconciliation on this same
+  // ledger page (no journal entry posted, just a status stamp on existing lines).
+  "kasBank.statusReconciled": { id: "Sudah direkonsiliasi", en: "Reconciled" },
+  "kasBank.selectAllUnreconciled": { id: "Pilih semua belum direkonsiliasi ({count})", en: "Select all unreconciled ({count})" },
+  "kasBank.linesSelected": { id: "baris dipilih", en: "lines selected" },
+  "kasBank.reconcileDateLabel": { id: "Tanggal Rekonsiliasi", en: "Reconciliation Date" },
+  "kasBank.reconcileNow": { id: "Rekonsiliasi Sekarang", en: "Reconcile Now" },
+  "kasBank.reconcileConfirmPrompt": { id: "Tandai baris terpilih sebagai sudah direkonsiliasi?", en: "Mark the selected lines as reconciled?" },
+  "kasBank.reconcileResultSuccess": {
+    id: "Berhasil merekonsiliasi {count} baris senilai {amount}.",
+    en: "Successfully reconciled {count} lines worth {amount}.",
+  },
   "kasBank.viewDetail": { id: "Lihat Detail", en: "View Detail" },
   "kasBank.emptyLedger": { id: "Belum ada transaksi.", en: "No transactions yet." },
 

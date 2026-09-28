@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import clsx from "clsx";
 import { navSections, type NavItem } from "./nav-items";
 import { useLanguage } from "@/lib/i18n";
@@ -10,6 +11,10 @@ import { useAuth } from "@/lib/auth-context";
 
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+}
+
+function sectionHasActiveItem(pathname: string, items: NavItem[]) {
+  return items.some((item) => isActive(pathname, item.href));
 }
 
 function NavLink({ item, pathname, onNavigate }: { item: NavItem; pathname: string; onNavigate?: () => void }) {
@@ -48,6 +53,36 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     }))
     .filter((section) => section.items.length > 0);
 
+  // Collapsed by default -- only the section containing the current page starts open,
+  // otherwise every section's items stack up at once and the sidebar reads as one huge
+  // wall of links. Manually expanding/collapsing a section is remembered as you
+  // navigate; the one exception is the section you just navigated into, which always
+  // auto-opens (below) so a direct link or browser back/forward never lands you on a
+  // page whose own nav entry is hidden.
+  const [collapsed, setCollapsed] = useState<Set<string>>(
+    () => new Set(navSections.filter((s) => !sectionHasActiveItem(pathname, s.items)).map((s) => s.titleKey))
+  );
+
+  useEffect(() => {
+    const active = navSections.find((s) => sectionHasActiveItem(pathname, s.items));
+    if (!active) return;
+    setCollapsed((prev) => {
+      if (!prev.has(active.titleKey)) return prev;
+      const next = new Set(prev);
+      next.delete(active.titleKey);
+      return next;
+    });
+  }, [pathname]);
+
+  function toggleSection(titleKey: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(titleKey)) next.delete(titleKey);
+      else next.add(titleKey);
+      return next;
+    });
+  }
+
   const content = (
     <>
       <div className="flex items-center gap-2.5 px-6 py-6">
@@ -67,21 +102,31 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
-        {visibleSections.map((section) => (
-          <div key={section.titleKey}>
-            <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              {t(section.titleKey)}
-            </p>
-            <ul className="space-y-1">
-              {section.items.map((item) => (
-                <li key={item.href}>
-                  <NavLink item={item} pathname={pathname} onNavigate={onClose} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-6">
+        {visibleSections.map((section) => {
+          const isOpen = !collapsed.has(section.titleKey);
+          return (
+            <div key={section.titleKey} className="pt-4 first:pt-0">
+              <button
+                type="button"
+                onClick={() => toggleSection(section.titleKey)}
+                className="flex w-full items-center justify-between rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400 hover:text-zinc-600"
+              >
+                {t(section.titleKey)}
+                <ChevronDown className={clsx("h-3.5 w-3.5 transition-transform", !isOpen && "-rotate-90")} />
+              </button>
+              {isOpen && (
+                <ul className="mt-1 space-y-1">
+                  {section.items.map((item) => (
+                    <li key={item.href}>
+                      <NavLink item={item} pathname={pathname} onNavigate={onClose} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
       </nav>
     </>
   );

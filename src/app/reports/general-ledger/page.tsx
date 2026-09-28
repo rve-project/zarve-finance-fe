@@ -6,13 +6,14 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah, defaultReportRange } from "@/lib/format";
-import { Account, GeneralLedgerResult } from "@/lib/types";
+import { Account, BusinessUnit, GeneralLedgerResult } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { StatTile } from "@/components/ui/StatTile";
 import { Pagination } from "@/components/ui/Pagination";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
 
 const BLUE = "#2a78d6";
 
@@ -20,6 +21,7 @@ const LIMIT = 50;
 
 export default function GeneralLedgerPage() {
   const { t } = useLanguage();
+  const [unit, setUnit] = useState<BusinessUnit>("b2b");
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountId, setAccountId] = useState<number | null>(null);
   const [range, setRange] = useState(defaultReportRange());
@@ -28,8 +30,10 @@ export default function GeneralLedgerPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setAccountId(null);
+    setData(null);
     const { from, to } = defaultReportRange();
-    Promise.all([api.accounts(), api.trialBalance(from, to)]).then(([accountList, tb]) => {
+    Promise.all([api.accountsForUnit(unit), api.trialBalanceForUnit(from, to, unit)]).then(([accountList, tb]) => {
       setAccounts(accountList);
       if (!accountList.length) return;
       // Default to whichever account actually has activity this year, instead of
@@ -39,13 +43,13 @@ export default function GeneralLedgerPage() {
       const defaultId = mostActive && mostActive.periodDebit + mostActive.periodCredit > 0 ? mostActive.account.id : accountList[0].id;
       setAccountId(defaultId);
     });
-  }, []);
+  }, [unit]);
 
   function load(p = 1) {
     if (!accountId) return;
     setLoading(true);
     api
-      .generalLedger(accountId, range.from, range.to, p, LIMIT)
+      .generalLedgerForUnit(accountId, range.from, range.to, p, LIMIT, unit)
       .then((res) => {
         setData(res);
         setPage(res.page);
@@ -62,7 +66,7 @@ export default function GeneralLedgerPage() {
 
   return (
     <div>
-      <PageHeader title={t("generalLedger.title")} subtitle={t("generalLedger.subtitle")} />
+      <PageHeader title={t("generalLedger.title")} subtitle={t("generalLedger.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
 
       <div className="relative z-40 mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <label className="text-sm">

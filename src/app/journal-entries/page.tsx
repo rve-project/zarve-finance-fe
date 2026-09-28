@@ -1,18 +1,22 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
-import { JournalEntryDetail, JournalEntrySummary } from "@/lib/types";
+import { BusinessUnit, JournalEntryDetail, JournalEntrySummary } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
 
 const LIMIT = 20;
 
-export default function JournalEntriesPage() {
+function JournalEntriesPageInner() {
   const { t } = useLanguage();
+  const searchParams = useSearchParams();
+  const [unit, setUnit] = useState<BusinessUnit>((searchParams.get("unit") as BusinessUnit) || "b2b");
   const [entries, setEntries] = useState<JournalEntrySummary[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -23,7 +27,7 @@ export default function JournalEntriesPage() {
   function load(p = 1) {
     setLoading(true);
     api
-      .journalEntries(p, LIMIT)
+      .journalEntriesForUnit(unit, p, LIMIT)
       .then((res) => {
         setEntries(res.data);
         setTotal(res.total);
@@ -33,7 +37,10 @@ export default function JournalEntriesPage() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => load(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setExpanded({});
+    load();
+  }, [unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function toggleExpand(id: number) {
     if (expanded[id]) {
@@ -44,12 +51,12 @@ export default function JournalEntriesPage() {
       });
       return;
     }
-    const detail = await api.getJournalEntry(id);
+    const detail = await api.getJournalEntryForUnit(unit, id);
     setExpanded((prev) => ({ ...prev, [id]: detail }));
   }
 
   async function handleReverse(id: number) {
-    await api.reverseJournalEntry(id);
+    await api.reverseJournalEntryForUnit(unit, id);
     load(page);
   }
 
@@ -59,9 +66,15 @@ export default function JournalEntriesPage() {
         title={t("journalEntries.title")}
         subtitle={t("journalEntries.subtitle")}
         action={
-          <Link href="/journal-entries/new" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
-            {t("journalEntries.newButton")}
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <BusinessUnitToggle value={unit} onChange={setUnit} />
+            <Link
+              href={`/journal-entries/new?unit=${unit}`}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              {t("journalEntries.newButton")}
+            </Link>
+          </div>
         }
       />
 
@@ -145,5 +158,13 @@ export default function JournalEntriesPage() {
 
       <Pagination page={page} limit={LIMIT} total={total} onChange={load} loading={loading} itemLabel={t("journalEntries.pagination.itemLabel")} />
     </div>
+  );
+}
+
+export default function JournalEntriesPage() {
+  return (
+    <Suspense fallback={null}>
+      <JournalEntriesPageInner />
+    </Suspense>
   );
 }

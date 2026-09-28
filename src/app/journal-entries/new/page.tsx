@@ -1,13 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
-import { Account } from "@/lib/types";
+import { Account, BusinessUnit } from "@/lib/types";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -27,9 +27,11 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function NewJournalEntryPage() {
+function NewJournalEntryPageInner() {
   const { t } = useLanguage();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const unit = (searchParams.get("unit") as BusinessUnit) || "b2b";
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [date, setDate] = useState(today());
@@ -40,8 +42,8 @@ export default function NewJournalEntryPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.accounts().then(setAccounts).catch(() => {});
-  }, []);
+    api.accountsForUnit(unit).then(setAccounts).catch(() => {});
+  }, [unit]);
 
   function updateLine(i: number, patch: Partial<LineDraft>) {
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -70,7 +72,7 @@ export default function NewJournalEntryPage() {
     }
     setSubmitting(true);
     try {
-      await api.createJournalEntry({
+      await api.createJournalEntryForUnit(unit, {
         date,
         ref: ref || undefined,
         narration: narration || undefined,
@@ -83,7 +85,7 @@ export default function NewJournalEntryPage() {
             description: l.description || undefined,
           })),
       });
-      router.push("/journal-entries");
+      router.push(`/journal-entries?unit=${unit}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("journalEntries.error.saveFailed"));
       setSubmitting(false);
@@ -92,7 +94,7 @@ export default function NewJournalEntryPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <Breadcrumb items={[{ label: t("journalEntries.title"), href: "/journal-entries" }, { label: t("journalEntries.new.title") }]} />
+      <Breadcrumb items={[{ label: t("journalEntries.title"), href: `/journal-entries?unit=${unit}` }, { label: t("journalEntries.new.title") }]} />
       <h1 className="mb-6 text-xl font-bold text-zinc-900 sm:text-2xl">{t("journalEntries.new.title")}</h1>
 
       <form onSubmit={handleSubmit} className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -206,7 +208,7 @@ export default function NewJournalEntryPage() {
         </div>
 
         <div className="flex items-center justify-end gap-3 rounded-b-2xl border-t border-zinc-100 bg-zinc-50 px-6 py-4 sm:px-8">
-          <Link href="/journal-entries" className="rounded-lg border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">
+          <Link href={`/journal-entries?unit=${unit}`} className="rounded-lg border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">
             {t("journalEntries.cancelButton")}
           </Link>
           <button
@@ -219,5 +221,13 @@ export default function NewJournalEntryPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function NewJournalEntryPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewJournalEntryPageInner />
+    </Suspense>
   );
 }

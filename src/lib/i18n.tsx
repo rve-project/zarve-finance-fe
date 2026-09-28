@@ -71,6 +71,9 @@ const dict: Record<string, Record<Lang, string>> = {
   "nav.kendaraan": { id: "Kendaraan", en: "Vehicles" },
   "nav.tagihanVendor": { id: "Tagihan Vendor", en: "Vendor Bills" },
   "nav.rekonsiliasiBank": { id: "Rekonsiliasi Bank", en: "Bank Reconciliation" },
+  "businessUnitToggle.b2b": { id: "B2B", en: "B2B" },
+  "businessUnitToggle.zarve": { id: "Zarve", en: "Zarve" },
+
   "nav.jurnalManual": { id: "Jurnal Manual", en: "Manual Journal" },
   "nav.trialBalance": { id: "Trial Balance", en: "Trial Balance" },
   "nav.generalLedger": { id: "General Ledger", en: "General Ledger" },

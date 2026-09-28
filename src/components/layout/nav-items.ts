@@ -84,10 +84,9 @@ export const navSections: NavSection[] = [
   },
   {
     // These report pages already existed (built, translated, working) but were never
-    // linked from the sidebar -- reachable only by typing the URL directly. Business-
-    // unit-aware (they read whichever unit's currently selected via the X-Business-Unit
-    // header), so this section sits between Zarve and Administrasi rather than inside
-    // either one.
+    // linked from the sidebar -- reachable only by typing the URL directly. Each page has
+    // its own Zarve/B2B toggle (defaulting to B2B) instead of a separate URL per unit --
+    // see BusinessUnitToggle usage inside each page.
     titleKey: "section.laporanKeuangan",
     items: [
       { labelKey: "nav.jurnalManual", href: "/journal-entries", icon: FileSignature },

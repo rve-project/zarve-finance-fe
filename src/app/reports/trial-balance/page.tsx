@@ -6,11 +6,12 @@ import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, 
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah, defaultReportRange } from "@/lib/format";
-import { AccountType, TrialBalanceResult } from "@/lib/types";
+import { AccountType, BusinessUnit, TrialBalanceResult } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
+import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
 
 // Validated categorical order (see dataviz skill's reference palette) -- the first 5
 // slots of the documented 8-hue sequence, used as-is rather than re-picked by
@@ -36,6 +37,7 @@ function axisTick(v: number) {
 
 export default function TrialBalancePage() {
   const { t } = useLanguage();
+  const [unit, setUnit] = useState<BusinessUnit>("b2b");
   const [range, setRange] = useState(defaultReportRange());
   const [data, setData] = useState<TrialBalanceResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,13 +45,13 @@ export default function TrialBalancePage() {
   function load() {
     setLoading(true);
     api
-      .trialBalance(range.from, range.to)
+      .trialBalanceForUnit(range.from, range.to, unit)
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeRows = data?.rows.filter((r) => r.initialBalance !== 0 || r.periodDebit !== 0 || r.periodCredit !== 0 || r.endBalance !== 0) ?? [];
   const totalDebit = activeRows.reduce((sum, r) => sum + r.periodDebit, 0);
@@ -57,7 +59,7 @@ export default function TrialBalancePage() {
 
   return (
     <div>
-      <PageHeader title={t("nav.trialBalance")} subtitle={t("trialBalance.subtitle")} />
+      <PageHeader title={t("nav.trialBalance")} subtitle={t("trialBalance.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
 
       <div className="relative z-40 mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <label className="text-sm">

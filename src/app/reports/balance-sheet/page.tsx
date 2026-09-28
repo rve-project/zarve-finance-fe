@@ -5,11 +5,12 @@ import { Landmark, Scale, CheckCircle2, AlertTriangle } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
-import { BalanceSheetResult } from "@/lib/types";
+import { BalanceSheetResult, BusinessUnit } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { SegmentedBar } from "@/components/ui/SegmentedBar";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
 
 // Fixed categorical order, validated (see dataviz skill) -- never cycled. Anything
 // past the 5th-largest account folds into "Lainnya" (gray) instead of reusing a hue.
@@ -25,6 +26,7 @@ function topSegments(rows: { account: { name: string }; endBalance: number }[], 
 
 export default function BalanceSheetPage() {
   const { t } = useLanguage();
+  const [unit, setUnit] = useState<BusinessUnit>("b2b");
   const [asOf, setAsOf] = useState(new Date().toISOString().slice(0, 10));
   const [data, setData] = useState<BalanceSheetResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,13 +34,13 @@ export default function BalanceSheetPage() {
   function load() {
     setLoading(true);
     api
-      .balanceSheet(asOf)
+      .balanceSheetForUnit(asOf, unit)
       .then(setData)
       .catch(() => {})
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(load, [unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function section(title: string, rows: BalanceSheetResult["assets"], total: number) {
     const active = rows.filter((r) => r.endBalance !== 0);
@@ -74,7 +76,7 @@ export default function BalanceSheetPage() {
 
   return (
     <div>
-      <PageHeader title={t("balanceSheet.title")} subtitle={t("balanceSheet.subtitle")} />
+      <PageHeader title={t("balanceSheet.title")} subtitle={t("balanceSheet.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
 
       <div className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <label className="text-sm">
