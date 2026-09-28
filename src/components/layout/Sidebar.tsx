@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import clsx from "clsx";
 import { navSections, type NavItem } from "./nav-items";
 import { useLanguage } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-context";
 
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
@@ -38,6 +39,14 @@ interface SidebarProps {
 export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { user } = useAuth();
+
+  const visibleSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.requiresUserFlag || user?.[item.requiresUserFlag]),
+    }))
+    .filter((section) => section.items.length > 0);
 
   const content = (
     <>
@@ -59,7 +68,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 pb-6">
-        {navSections.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.titleKey}>
             <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">
               {t(section.titleKey)}

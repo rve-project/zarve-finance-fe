@@ -19,6 +19,7 @@ import { dictContacts } from "./i18n/dict.contacts";
 import { dictExpenses } from "./i18n/dict.expenses";
 import { dictPurchases } from "./i18n/dict.purchases";
 import { dictSales } from "./i18n/dict.sales";
+import { dictAuditAndValidation } from "./i18n/dict.auditAndValidation";
 
 export type Lang = "id" | "en";
 
@@ -45,6 +46,7 @@ const dict: Record<string, Record<Lang, string>> = {
   ...dictExpenses,
   ...dictPurchases,
   ...dictSales,
+  ...dictAuditAndValidation,
 
   // Sidebar sections
   "section.utama": { id: "Utama", en: "Main" },
@@ -69,6 +71,7 @@ const dict: Record<string, Record<Lang, string>> = {
   "nav.kendaraan": { id: "Kendaraan", en: "Vehicles" },
   "nav.tagihanVendor": { id: "Tagihan Vendor", en: "Vendor Bills" },
   "nav.rekonsiliasiBank": { id: "Rekonsiliasi Bank", en: "Bank Reconciliation" },
+  "nav.jurnalManual": { id: "Jurnal Manual", en: "Manual Journal" },
   "nav.trialBalance": { id: "Trial Balance", en: "Trial Balance" },
   "nav.generalLedger": { id: "General Ledger", en: "General Ledger" },
   "nav.labaRugi": { id: "Laba Rugi", en: "Profit & Loss" },
@@ -80,6 +83,8 @@ const dict: Record<string, Record<Lang, string>> = {
   "nav.sinkronisasiData": { id: "Sinkronisasi Data", en: "Data Sync" },
   "nav.manajemenUser": { id: "Manajemen User", en: "User Management" },
   "nav.pengaturan": { id: "Pengaturan", en: "Settings" },
+  "nav.validasiJurnal": { id: "Validasi Jurnal", en: "Journal Validation" },
+  "nav.logAktivitas": { id: "Log Aktivitas", en: "Activity Log" },
 
   // Theme toggle
   "theme.switchToDark": { id: "Ganti ke tema gelap", en: "Switch to dark theme" },

@@ -113,4 +113,18 @@ export const dictInvoices: Record<string, Record<"id" | "en", string>> = {
   "financeInvoiceDetail.colTotalAmount": { id: "Total", en: "Total" },
   "financeInvoiceDetail.colOutstanding": { id: "Sisa", en: "Outstanding" },
   "financeInvoiceDetail.noSourceInvoices": { id: "Tidak ada invoice Zarve outstanding yang cocok untuk periode ini.", en: "No matching outstanding Zarve invoices for this period." },
+
+  // D'Consulting audit gap #4: manual settlement (pelunasan) for a Zarve-synced invoice
+  // -- calls the same createPayment path autoCreatePayment uses during Zarve sync.
+  "financeInvoiceDetail.payment.action": { id: "Bayar / Lunasi", en: "Pay / Settle" },
+  "financeInvoiceDetail.payment.title": { id: "Catat Pembayaran", en: "Record Payment" },
+  "financeInvoiceDetail.payment.amount": { id: "Jumlah", en: "Amount" },
+  "financeInvoiceDetail.payment.date": { id: "Tanggal", en: "Date" },
+  "financeInvoiceDetail.payment.memo": { id: "Catatan", en: "Memo" },
+  "financeInvoiceDetail.payment.cancel": { id: "Batal", en: "Cancel" },
+  "financeInvoiceDetail.payment.save": { id: "Simpan", en: "Save" },
+  "financeInvoiceDetail.payment.saving": { id: "Menyimpan...", en: "Saving..." },
+  "financeInvoiceDetail.payment.history": { id: "Riwayat Pembayaran", en: "Payment History" },
+  "financeInvoiceDetail.payment.errorRequired": { id: "Jumlah dan tanggal wajib diisi", en: "Amount and date are required" },
+  "financeInvoiceDetail.payment.errorSave": { id: "Gagal menyimpan pembayaran", en: "Failed to save payment" },
 };

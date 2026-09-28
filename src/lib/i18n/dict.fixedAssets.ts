@@ -136,4 +136,29 @@ export const dictFixedAssets: Record<string, Record<"id" | "en", string>> = {
     id: "Melengkapi data dari jurnal yang sudah diposting sebelumnya -- tidak akan membuat jurnal baru.",
     en: "Completing details from an already-posted journal entry -- this will not create a new journal entry.",
   },
+
+  // D'Consulting audit gap #3: distinguish an internal operational vehicle (RVE's own
+  // car, outside the Zarve rental fleet) from any other fixed asset.
+  "fixedAssets.new.assetType": { id: "Jenis Aset", en: "Asset Type" },
+  "fixedAssets.new.assetTypeGeneral": { id: "Umum", en: "General" },
+  "fixedAssets.new.assetTypeVehicle": { id: "Kendaraan Operasional", en: "Operational Vehicle" },
+  "fixedAssets.new.hint.assetType": {
+    id: "Pilih 'Kendaraan Operasional' untuk kendaraan milik RVE sendiri di luar armada rental (yang tercatat di menu Kendaraan/Zarve).",
+    en: "Choose 'Operational Vehicle' for RVE's own car outside the rental fleet (which is tracked under the Vehicles/Zarve menu).",
+  },
+  "fixedAssets.new.plateNumber": { id: "Plat Nomor", en: "Plate Number" },
+  "fixedAssets.assetTypeVehicleBadge": { id: "Kendaraan", en: "Vehicle" },
+
+  // D'Consulting audit gap #5: revaluation / impairment.
+  "fixedAssets.revalue.action": { id: "Revaluasi", en: "Revalue" },
+  "fixedAssets.revalue.dateLabel": { id: "Tanggal Revaluasi", en: "Revaluation Date" },
+  "fixedAssets.revalue.newValueLabel": { id: "Nilai Baru", en: "New Value" },
+  "fixedAssets.revalue.accountLabel": { id: "Akun Penyesuaian", en: "Adjustment Account" },
+  "fixedAssets.revalue.notesLabel": { id: "Catatan", en: "Notes" },
+  "fixedAssets.revalue.submit": { id: "Simpan Revaluasi", en: "Save Revaluation" },
+  "fixedAssets.revalue.submitting": { id: "Memproses...", en: "Processing..." },
+  "fixedAssets.revalue.errorSave": { id: "Gagal menyimpan revaluasi", en: "Failed to save revaluation" },
+  "fixedAssets.revalue.bookValuePreview": { id: "Nilai buku saat ini", en: "Current book value" },
+  "fixedAssets.revalue.historyToggle": { id: "Riwayat", en: "History" },
+  "fixedAssets.revalue.historyHeading": { id: "Riwayat Revaluasi", en: "Revaluation History" },
 };

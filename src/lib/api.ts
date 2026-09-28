@@ -4,6 +4,7 @@ import {
   AccountCategory,
   AccountDetail,
   AccountType,
+  ActivityLogPage,
   Citizenship,
   Contact,
   ContactType,
@@ -19,6 +20,10 @@ import {
   DepreciationScheduleResult,
   DisposedFixedAsset,
   DisposeAssetResult,
+  FixedAssetRevaluation,
+  FixedAssetType,
+  RevalueAssetResult,
+  JournalValidationResult,
   DriverRevenueRecap,
   Expense,
   ExpenseDetail,
@@ -203,7 +208,8 @@ export const api = {
 
   users: () => get<ManagedUser[]>("/users"),
   createUser: (data: { email: string; name?: string }) => post<ManagedUser>("/users", data),
-  updateUser: (id: number, data: { name?: string; aktif?: boolean }) => put<ManagedUser>(`/users/${id}`, data),
+  updateUser: (id: number, data: { name?: string; aktif?: boolean; canViewActivityLog?: boolean }) =>
+    put<ManagedUser>(`/users/${id}`, data),
   deleteUser: (id: number) => del<void>(`/users/${id}`),
 
   accounts: (type?: AccountType, category?: string) => get<Account[]>(`/accounts${qs({ type, category })}`),
@@ -255,6 +261,8 @@ export const api = {
 
   payments: (params?: { partnerId?: number; invoiceId?: number }) =>
     get<Payment[]>(`/payments${qs({ partnerId: params?.partnerId, invoiceId: params?.invoiceId })}`),
+  createPayment: (data: { partnerId: number; invoiceId?: number | null; amount: number; date: string; method?: string; memo?: string }) =>
+    post<Payment>("/payments", data),
 
   syncZarveMirrorNow: () => post<{ started: boolean }>("/zarve-mirror/sync"),
   zarveMirrorStatus: () => get<ZarveMirrorSyncStatus | null>("/zarve-mirror/status"),
@@ -371,6 +379,8 @@ export const api = {
     acquisitionCost: number;
     creditAccountId?: number;
     description?: string;
+    assetType?: FixedAssetType;
+    plateNumber?: string;
     isNonDepreciating: boolean;
     depreciationMethod?: "straight_line";
     usefulLifeYears?: number;
@@ -382,6 +392,9 @@ export const api = {
   }) => post<ActiveFixedAsset>("/fixed-assets", data),
   disposeFixedAsset: (id: number, data: { disposalDate: string; disposalAmount: number; receivedAccountId: number }) =>
     post<DisposeAssetResult>(`/fixed-assets/${id}/dispose`, data),
+  revalueFixedAsset: (id: number, data: { revaluationDate: string; newValue: number; adjustmentAccountId: number; notes?: string }) =>
+    post<RevalueAssetResult>(`/fixed-assets/${id}/revalue`, data),
+  fixedAssetRevaluations: (id: number) => get<FixedAssetRevaluation[]>(`/fixed-assets/${id}/revaluations`),
 
   orders: (type: OrderType, params: { from?: string; to?: string; search?: string } = {}) =>
     get<OrdersByStatus>(`/orders${qs({ type, from: params.from, to: params.to, search: params.search })}`),
@@ -524,4 +537,9 @@ export const api = {
   convertSale: (id: number, targetType: SaleDocType) => post<SaleDocumentDetail>(`/sales/${id}/convert`, { targetType }),
   addSalePayment: (id: number, data: { bankAccountId: number; amount: number; paymentDate: string; memo?: string }) =>
     post<SaleDocumentDetail>(`/sales/${id}/payments`, data),
+
+  journalValidation: () => get<JournalValidationResult>("/reports/journal-validation"),
+
+  activityLogs: (params: { userId?: number; resourceType?: string; from?: string; to?: string; page?: number; limit?: number } = {}) =>
+    get<ActivityLogPage>(`/activity-logs${qs(params)}`),
 };

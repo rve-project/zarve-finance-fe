@@ -1,16 +1,21 @@
 import {
   AlertTriangle,
+  BarChart3,
   Banknote,
   BookOpen,
   Boxes,
   Car,
+  ClipboardCheck,
   Contact as ContactIcon,
+  FileSignature,
   FileSpreadsheet,
   Home,
+  History,
   MapPinOff,
   PackageCheck,
   Receipt,
   ReceiptText,
+  Scale,
   ShoppingCart,
   Settings,
   ShoppingBag,
@@ -26,6 +31,10 @@ export interface NavItem {
   labelKey: string;
   href: string;
   icon: LucideIcon;
+  /** Only shown when the signed-in user has this flag on their account (see
+   * useAuth().user) -- currently just "canViewActivityLog" (D'Consulting audit gap #10).
+   * Sidebar.tsx is what actually filters on this. */
+  requiresUserFlag?: "canViewActivityLog";
 }
 
 export interface NavSection {
@@ -74,10 +83,28 @@ export const navSections: NavSection[] = [
     ],
   },
   {
+    // These report pages already existed (built, translated, working) but were never
+    // linked from the sidebar -- reachable only by typing the URL directly. Business-
+    // unit-aware (they read whichever unit's currently selected via the X-Business-Unit
+    // header), so this section sits between Zarve and Administrasi rather than inside
+    // either one.
+    titleKey: "section.laporanKeuangan",
+    items: [
+      { labelKey: "nav.jurnalManual", href: "/journal-entries", icon: FileSignature },
+      { labelKey: "nav.trialBalance", href: "/reports/trial-balance", icon: BarChart3 },
+      { labelKey: "nav.generalLedger", href: "/reports/general-ledger", icon: BookOpen },
+      { labelKey: "nav.labaRugi", href: "/reports/profit-loss", icon: TrendingUp },
+      { labelKey: "nav.neraca", href: "/reports/balance-sheet", icon: Scale },
+      { labelKey: "nav.arusKas", href: "/reports/cash-flow", icon: Wallet },
+    ],
+  },
+  {
     titleKey: "section.administrasi",
     items: [
       { labelKey: "nav.manajemenUser", href: "/users", icon: UserCog },
       { labelKey: "nav.pengaturan", href: "/settings", icon: Settings },
+      { labelKey: "nav.validasiJurnal", href: "/validasi-jurnal", icon: ClipboardCheck },
+      { labelKey: "nav.logAktivitas", href: "/log-aktivitas", icon: History, requiresUserFlag: "canViewActivityLog" },
     ],
   },
 ];

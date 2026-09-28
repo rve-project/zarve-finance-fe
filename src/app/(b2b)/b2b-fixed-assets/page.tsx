@@ -5,7 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
-import { Account, ActiveFixedAsset, DepreciationScheduleRow, DisposedFixedAsset, PendingFixedAsset } from "@/lib/types";
+import { Account, ActiveFixedAsset, DepreciationScheduleRow, DisposedFixedAsset, FixedAssetRevaluation, PendingFixedAsset } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { MonthPicker } from "@/components/ui/MonthPicker";
@@ -171,10 +171,138 @@ function DisposeForm({ asset, onDone, onCancel }: { asset: ActiveFixedAsset; onD
   );
 }
 
+function RevalueForm({ asset, onDone, onCancel }: { asset: ActiveFixedAsset; onDone: () => void; onCancel: () => void }) {
+  const { t } = useLanguage();
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [revaluationDate, setRevaluationDate] = useState(new Date().toISOString().slice(0, 10));
+  const [newValue, setNewValue] = useState("");
+  const [adjustmentAccountId, setAdjustmentAccountId] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.accounts().then(setAccounts).catch(() => {});
+  }, []);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await api.revalueFixedAsset(asset.id, {
+        revaluationDate,
+        newValue: Number(newValue),
+        adjustmentAccountId: Number(adjustmentAccountId),
+        notes: notes || undefined,
+      });
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("fixedAssets.revalue.errorSave"));
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <tr className="border-b border-zinc-50 bg-zinc-50">
+      <td colSpan={6} className="px-4 py-4">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end">
+          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 sm:col-span-4">{error}</p>}
+          <p className="text-xs text-zinc-500 sm:col-span-4">
+            {t("fixedAssets.revalue.bookValuePreview")}: <strong>{formatRupiah(asset.bookValue)}</strong>
+          </p>
+          <label className="text-sm">
+            <span className="mb-1 block text-zinc-600">{t("fixedAssets.revalue.dateLabel")}</span>
+            <input
+              required
+              type="date"
+              value={revaluationDate}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setRevaluationDate(e.target.value)}
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-zinc-600">{t("fixedAssets.revalue.newValueLabel")}</span>
+            <input
+              required
+              type="number"
+              value={newValue}
+              onChange={(e) => setNewValue(e.target.value)}
+              className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-zinc-600">{t("fixedAssets.revalue.accountLabel")}</span>
+            <Dropdown
+              value={adjustmentAccountId}
+              onChange={setAdjustmentAccountId}
+              options={accounts.map((a) => ({ value: String(a.id), label: `${a.code} - ${a.name}` }))}
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-zinc-600">{t("fixedAssets.revalue.notesLabel")}</span>
+            <input value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" />
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {submitting ? t("fixedAssets.revalue.submitting") : t("fixedAssets.revalue.submit")}
+            </button>
+            <button type="button" onClick={onCancel} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">
+              {t("fixedAssets.active.cancel")}
+            </button>
+          </div>
+        </form>
+      </td>
+    </tr>
+  );
+}
+
+function RevaluationHistory({ assetId }: { assetId: number }) {
+  const { t } = useLanguage();
+  const [rows, setRows] = useState<FixedAssetRevaluation[] | null>(null);
+
+  useEffect(() => {
+    api.fixedAssetRevaluations(assetId).then(setRows).catch(() => setRows([]));
+  }, [assetId]);
+
+  if (!rows || !rows.length) return null;
+
+  return (
+    <tr className="border-b border-zinc-50 bg-zinc-50/60">
+      <td colSpan={6} className="px-4 py-3">
+        <p className="mb-2 text-xs font-semibold text-zinc-600">{t("fixedAssets.revalue.historyHeading")}</p>
+        <table className="w-full text-xs">
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-zinc-100">
+                <td className="py-1.5 text-zinc-500">{formatDate(r.revaluationDate)}</td>
+                <td className="py-1.5 text-zinc-500">
+                  {formatRupiah(r.previousBookValue)} → {formatRupiah(r.newValue)}
+                </td>
+                <td className={`py-1.5 text-right font-medium ${r.adjustmentAmount >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                  {formatRupiah(r.adjustmentAmount)}
+                </td>
+                <td className="py-1.5 text-right text-zinc-400">{r.createdByName ?? "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  );
+}
+
 function ActiveTab() {
   const { t } = useLanguage();
   const [rows, setRows] = useState<ActiveFixedAsset[] | null>(null);
   const [disposingId, setDisposingId] = useState<number | null>(null);
+  const [revaluingId, setRevaluingId] = useState<number | null>(null);
+  const [historyId, setHistoryId] = useState<number | null>(null);
 
   function load() {
     api.fixedAssetsActive().then(setRows).catch(() => setRows([]));
@@ -205,11 +333,33 @@ function ActiveTab() {
                   <td className="px-4 py-2.5">
                     <span className="font-medium text-zinc-800">{a.name}</span>{" "}
                     <span className="font-mono text-xs text-zinc-400">#{a.assetNumber}</span>
+                    {a.assetType === "vehicle" && (
+                      <>
+                        {" "}
+                        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-600">
+                          {t("fixedAssets.assetTypeVehicleBadge")} · {a.plateNumber}
+                        </span>
+                      </>
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-zinc-500">{a.categoryAccountCode} - {a.categoryAccountName}</td>
                   <td className="px-4 py-2.5 text-right">{formatRupiah(a.acquisitionCost)}</td>
                   <td className="px-4 py-2.5 text-right font-medium">{formatRupiah(a.bookValue)}</td>
-                  <td className="px-4 py-2.5 text-right">
+                  <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setHistoryId(historyId === a.id ? null : a.id)}
+                      className="mr-3 text-xs font-semibold text-zinc-500 hover:underline"
+                    >
+                      {t("fixedAssets.revalue.historyToggle")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRevaluingId(revaluingId === a.id ? null : a.id)}
+                      className="mr-3 text-xs font-semibold text-sky-600 hover:underline"
+                    >
+                      {t("fixedAssets.revalue.action")}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setDisposingId(disposingId === a.id ? null : a.id)}
@@ -219,6 +369,17 @@ function ActiveTab() {
                     </button>
                   </td>
                 </tr>
+                {historyId === a.id && <RevaluationHistory assetId={a.id} />}
+                {revaluingId === a.id && (
+                  <RevalueForm
+                    asset={a}
+                    onCancel={() => setRevaluingId(null)}
+                    onDone={() => {
+                      setRevaluingId(null);
+                      load();
+                    }}
+                  />
+                )}
                 {disposingId === a.id && (
                   <DisposeForm
                     asset={a}
@@ -274,6 +435,14 @@ function DisposedTab() {
                 <td className="px-4 py-2.5">
                   <span className="font-medium text-zinc-800">{a.name}</span>{" "}
                   <span className="font-mono text-xs text-zinc-400">#{a.assetNumber}</span>
+                  {a.assetType === "vehicle" && (
+                    <>
+                      {" "}
+                      <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-600">
+                        {t("fixedAssets.assetTypeVehicleBadge")} · {a.plateNumber}
+                      </span>
+                    </>
+                  )}
                 </td>
                 <td className="px-4 py-2.5 font-mono text-xs">{a.disposalJournalEntryId ? `LEPAS-${a.assetNumber}` : "-"}</td>
                 <td className="px-4 py-2.5 text-right">{a.disposalAmount !== null ? formatRupiah(a.disposalAmount) : "-"}</td>

@@ -1,12 +1,13 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
-import { InvoiceDetail, ZarveInvoiceDetail } from "@/lib/types";
+import { InvoiceDetail, Payment, ZarveInvoiceDetail } from "@/lib/types";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const SOURCE_STATUS_STYLE: Record<string, string> = {
   UNPAID: "bg-red-50 text-red-600",
@@ -36,12 +37,53 @@ export default function FinanceInvoiceDetailPage() {
   const [sourceDetails, setSourceDetails] = useState<Record<string, ZarveInvoiceDetail>>({});
   const [loadingSource, setLoadingSource] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paymentMemo, setPaymentMemo] = useState("");
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+
+  function load() {
     api
       .getInvoice(Number(id))
       .then(setInvoice)
       .catch((err) => setError(err instanceof Error ? err.message : t("financeInvoiceDetail.errorLoading")));
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+    api
+      .payments({ invoiceId: Number(id) })
+      .then(setPayments)
+      .catch(() => {});
+  }
+
+  useEffect(load, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSubmitPayment(e: FormEvent) {
+    e.preventDefault();
+    if (!invoice || !paymentAmount || !paymentDate) {
+      setPaymentError(t("financeInvoiceDetail.payment.errorRequired"));
+      return;
+    }
+    setPaymentError(null);
+    setPaymentSaving(true);
+    try {
+      await api.createPayment({
+        partnerId: invoice.partnerId,
+        invoiceId: invoice.id,
+        amount: Number(paymentAmount),
+        date: paymentDate,
+        memo: paymentMemo || undefined,
+      });
+      setPaymentOpen(false);
+      setPaymentAmount("");
+      setPaymentMemo("");
+      load();
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : t("financeInvoiceDetail.payment.errorSave"));
+    } finally {
+      setPaymentSaving(false);
+    }
+  }
 
   function toggleSource(zarveInvoiceId: string) {
     setExpandedSource((prev) => {
@@ -132,6 +174,38 @@ export default function FinanceInvoiceDetailPage() {
                 <p className={`font-semibold ${invoice.outstanding > 0 ? "text-red-600" : "text-zinc-900"}`}>{formatRupiah(invoice.outstanding)}</p>
               </div>
             </div>
+
+            {invoice.outstanding > 0 && (
+              <div className="mt-4 flex justify-end border-t border-zinc-100 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaymentAmount(String(invoice.outstanding));
+                    setPaymentOpen(true);
+                  }}
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                >
+                  {t("financeInvoiceDetail.payment.action")}
+                </button>
+              </div>
+            )}
+
+            {payments.length > 0 && (
+              <div className="mt-4 border-t border-zinc-100 pt-4">
+                <p className="mb-2 text-sm font-semibold text-zinc-700">{t("financeInvoiceDetail.payment.history")}</p>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {payments.map((p) => (
+                      <tr key={p.id} className="border-b border-zinc-50">
+                        <td className="py-1.5 text-zinc-500">{formatDate(p.date)}</td>
+                        <td className="py-1.5 text-zinc-500">{p.memo ?? "-"}</td>
+                        <td className="py-1.5 text-right font-medium">{formatRupiah(p.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <h2 className="mb-2 text-sm font-semibold text-zinc-700">{t("financeInvoiceDetail.lines")}</h2>
@@ -251,6 +325,56 @@ export default function FinanceInvoiceDetailPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {paymentOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+              <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
+                <h2 className="mb-4 text-sm font-semibold text-zinc-800">{t("financeInvoiceDetail.payment.title")}</h2>
+                {paymentError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{paymentError}</p>}
+                <form onSubmit={handleSubmitPayment} className="space-y-4">
+                  <label className="block text-sm">
+                    <span className="mb-1.5 block font-medium text-zinc-700">{t("financeInvoiceDetail.payment.amount")}</span>
+                    <input
+                      required
+                      type="number"
+                      min={0}
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="mb-1.5 block font-medium text-zinc-700">{t("financeInvoiceDetail.payment.date")}</span>
+                    <DatePicker value={paymentDate} onChange={setPaymentDate} />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="mb-1.5 block font-medium text-zinc-700">{t("financeInvoiceDetail.payment.memo")}</span>
+                    <input
+                      value={paymentMemo}
+                      onChange={(e) => setPaymentMemo(e.target.value)}
+                      className="w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    />
+                  </label>
+                  <div className="mt-2 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentOpen(false)}
+                      className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                    >
+                      {t("financeInvoiceDetail.payment.cancel")}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={paymentSaving}
+                      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {paymentSaving ? t("financeInvoiceDetail.payment.saving") : t("financeInvoiceDetail.payment.save")}
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}

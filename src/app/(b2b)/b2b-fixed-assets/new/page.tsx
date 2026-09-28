@@ -44,6 +44,8 @@ function NewFixedAssetPageInner() {
   const [acquisitionCost, setAcquisitionCost] = useState(searchParams.get("amount") ?? "");
   const [creditAccountId, setCreditAccountId] = useState("");
   const [description, setDescription] = useState("");
+  const [assetType, setAssetType] = useState<"general" | "vehicle">("general");
+  const [plateNumber, setPlateNumber] = useState("");
   const [isNonDepreciating, setIsNonDepreciating] = useState(false);
   const [methods, setMethods] = useState<string[]>([]);
   const [depreciationMethod, setDepreciationMethod] = useState("");
@@ -109,6 +111,8 @@ function NewFixedAssetPageInner() {
         acquisitionCost: Number(acquisitionCost),
         creditAccountId: isFromPending ? undefined : Number(creditAccountId),
         description: description || undefined,
+        assetType,
+        plateNumber: assetType === "vehicle" ? plateNumber : undefined,
         isNonDepreciating,
         depreciationMethod: isNonDepreciating ? undefined : (depreciationMethod as "straight_line") || undefined,
         usefulLifeYears: isNonDepreciating ? undefined : Number(usefulLifeYears) || undefined,
@@ -148,6 +152,26 @@ function NewFixedAssetPageInner() {
               <span className="mb-1.5 block font-medium text-zinc-700">{t("fixedAssets.new.acquisitionDate")}</span>
               <DatePicker value={acquisitionDate} onChange={setAcquisitionDate} maxDate={today()} />
             </label>
+
+            <label className="block text-sm">
+              <span className="mb-1.5 flex items-center gap-1.5 font-medium text-zinc-700">
+                {t("fixedAssets.new.assetType")} <HelpHint text={t("fixedAssets.new.hint.assetType")} />
+              </span>
+              <Dropdown
+                value={assetType}
+                onChange={(v) => setAssetType(v as "general" | "vehicle")}
+                options={[
+                  { value: "general", label: t("fixedAssets.new.assetTypeGeneral") },
+                  { value: "vehicle", label: t("fixedAssets.new.assetTypeVehicle") },
+                ]}
+              />
+            </label>
+            {assetType === "vehicle" && (
+              <label className="block text-sm">
+                <span className="mb-1.5 block font-medium text-zinc-700">{t("fixedAssets.new.plateNumber")} *</span>
+                <input required value={plateNumber} onChange={(e) => setPlateNumber(e.target.value)} className={inputClass} />
+              </label>
+            )}
 
             <label className="block text-sm">
               <span className="mb-1.5 flex items-center gap-1.5 font-medium text-zinc-700">

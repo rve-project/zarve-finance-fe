@@ -1,3 +1,5 @@
+export type BusinessUnit = "zarve" | "b2b";
+
 export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
 export type AccountAccessMode = "all" | "some";
 
@@ -206,6 +208,7 @@ export interface User {
   name: string;
   role: UserRole;
   aktif: boolean;
+  canViewActivityLog: boolean;
 }
 
 export interface ManagedUser extends User {
@@ -670,11 +673,15 @@ export interface BankStatementImportResult {
 export type DepreciationMethod = "straight_line";
 export type FixedAssetStatus = "active" | "disposed";
 
+export type FixedAssetType = "general" | "vehicle";
+
 export interface FixedAsset {
   id: number;
   assetNumber: string;
   name: string;
   description: string | null;
+  assetType: FixedAssetType;
+  plateNumber: string | null;
   categoryAccountId: number;
   categoryAccountCode: string;
   categoryAccountName: string;
@@ -737,6 +744,81 @@ export interface DisposeAssetResult {
   disposalJournalEntryId: number;
   bookValueAtDisposal: number;
   gainLoss: number;
+}
+
+export interface RevalueAssetResult {
+  journalEntryId: number;
+  previousBookValue: number;
+  newValue: number;
+  adjustment: number;
+}
+
+export interface FixedAssetRevaluation {
+  id: number;
+  revaluationDate: string;
+  previousAcquisitionCost: number;
+  previousBookValue: number;
+  newValue: number;
+  adjustmentAmount: number;
+  adjustmentAccountCode: string;
+  adjustmentAccountName: string;
+  journalEntryId: number;
+  notes: string | null;
+  createdByName: string | null;
+  createdAt: string;
+}
+
+// D'Consulting audit gaps #6/#7 -- a runnable "trial test" over every transaction type,
+// Zarve and B2B, manual and synced. See rve-finance-be's reports.controller.ts
+// journalValidation.
+export interface JournalValidationOrphan {
+  type: string;
+  id: number;
+  ref: string | null;
+}
+
+export interface JournalValidationTrialBalanceRow {
+  businessUnit: BusinessUnit;
+  totalDebit: number;
+  totalCredit: number;
+  balanced: boolean;
+}
+
+export interface JournalValidationSubledgerMismatch {
+  label: string;
+  subledgerTotal: number;
+  glTotal: number;
+  difference: number;
+}
+
+export interface JournalValidationResult {
+  orphanTransactions: JournalValidationOrphan[];
+  trialBalance: JournalValidationTrialBalanceRow[];
+  subledgerMismatches: JournalValidationSubledgerMismatch[];
+}
+
+// D'Consulting audit gap #10 -- global activity log, populated by one backend
+// middleware (see rve-finance-be's middlewares/auditLog.ts).
+export interface ActivityLogEntry {
+  id: number;
+  userId: number | null;
+  userName: string | null;
+  userEmail: string | null;
+  businessUnit: BusinessUnit | null;
+  method: string;
+  path: string;
+  resourceType: string | null;
+  resourceId: string | null;
+  requestBody: Record<string, unknown> | null;
+  responseStatus: number;
+  createdAt: string;
+}
+
+export interface ActivityLogPage {
+  total: number;
+  page: number;
+  limit: number;
+  data: ActivityLogEntry[];
 }
 
 // "Pemenuhan" (order fulfillment) board -- operational/logistics tracker, not wired
