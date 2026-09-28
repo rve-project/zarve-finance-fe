@@ -8,6 +8,7 @@ import clsx from "clsx";
 import { navSections, type NavItem } from "./nav-items";
 import { useLanguage } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
+import { canAccessModule } from "@/lib/permissions";
 
 function isActive(pathname: string, href: string) {
   return pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
@@ -49,7 +50,11 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const visibleSections = navSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.requiresUserFlag || user?.[item.requiresUserFlag]),
+      items: section.items.filter((item) => {
+        if (item.requiresUserFlag && !user?.[item.requiresUserFlag]) return false;
+        if (item.module && !canAccessModule(user, item.module)) return false;
+        return true;
+      }),
     }))
     .filter((section) => section.items.length > 0);
 

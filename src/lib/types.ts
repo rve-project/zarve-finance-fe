@@ -209,10 +209,14 @@ export interface User {
   role: UserRole;
   aktif: boolean;
   canViewActivityLog: boolean;
+  /** Per-user menu restriction. Null = full access (default, every existing user). */
+  allowedModules: string[] | null;
 }
 
 export interface ManagedUser extends User {
   zarveUserId: string | null;
+  /** Whether an admin set a local password (login skips Zarve entirely when true). */
+  hasLocalPassword: boolean;
   createdAt: string;
 }
 

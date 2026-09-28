@@ -212,9 +212,18 @@ export const api = {
   me: () => get<User>("/auth/me"),
 
   users: () => get<ManagedUser[]>("/users"),
-  createUser: (data: { email: string; name?: string }) => post<ManagedUser>("/users", data),
-  updateUser: (id: number, data: { name?: string; aktif?: boolean; canViewActivityLog?: boolean }) =>
-    put<ManagedUser>(`/users/${id}`, data),
+  createUser: (data: { email: string; name?: string; password?: string; allowedModules?: string[] | null }) =>
+    post<ManagedUser>("/users", data),
+  updateUser: (
+    id: number,
+    data: {
+      name?: string;
+      aktif?: boolean;
+      canViewActivityLog?: boolean;
+      password?: string;
+      allowedModules?: string[] | null;
+    }
+  ) => put<ManagedUser>(`/users/${id}`, data),
   deleteUser: (id: number) => del<void>(`/users/${id}`),
 
   accounts: (type?: AccountType, category?: string) => get<Account[]>(`/accounts${qs({ type, category })}`),
