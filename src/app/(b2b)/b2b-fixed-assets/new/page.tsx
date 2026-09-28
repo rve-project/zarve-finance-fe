@@ -62,7 +62,6 @@ function NewFixedAssetPageInner() {
     // just pre-fill a sensible default so the common case needs no extra clicks.
     api.accounts().then((list) => {
       setAccounts(list);
-      setAssetNumber(String(10001));
 
       const fixedAssetDefault =
         list.find((a) => a.type === "asset" && a.code.startsWith("15") && !/akumulasi|accumulated/i.test(a.name)) ??
@@ -177,7 +176,12 @@ function NewFixedAssetPageInner() {
               <span className="mb-1.5 flex items-center gap-1.5 font-medium text-zinc-700">
                 {t("fixedAssets.new.assetNumber")} <HelpHint text={t("fixedAssets.new.hint.assetNumber")} />
               </span>
-              <input value={assetNumber} onChange={(e) => setAssetNumber(e.target.value)} className={inputClass} />
+              <input
+                value={assetNumber}
+                onChange={(e) => setAssetNumber(e.target.value)}
+                placeholder="Otomatis jika dikosongkan"
+                className={inputClass}
+              />
             </label>
             <label className="block text-sm">
               <span className="mb-1.5 block font-medium text-zinc-700">{t("fixedAssets.new.acquisitionCost")} *</span>
