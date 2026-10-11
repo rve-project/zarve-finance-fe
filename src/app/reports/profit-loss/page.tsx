@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Download } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
-import { formatRupiah, defaultReportRange } from "@/lib/format";
+import { formatRupiah } from "@/lib/format";
 import { BusinessUnit, ProfitAndLossResult } from "@/lib/types";
+import { Period, ComparisonMode, thisMonthPeriod, expandComparison, periodLabel } from "@/lib/periods";
+import { activeAccountsAcrossColumns, buildColumnMaps } from "@/lib/reportColumns";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
-import { DatePicker } from "@/components/ui/DatePicker";
+import { PeriodPicker } from "@/components/ui/PeriodPicker";
+import { ComparisonPicker } from "@/components/ui/ComparisonPicker";
 import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
+import { AmountLink } from "@/components/ui/AmountLink";
 
 const INCOME_COLOR = "#0ca30c";
 const EXPENSE_COLOR = "#d03b3b";
@@ -20,38 +24,59 @@ function axisTick(v: number) {
   return v >= 1_000_000 ? `${(v / 1_000_000).toFixed(0)}jt` : String(v);
 }
 
+interface Column {
+  period: Period;
+  data: ProfitAndLossResult;
+}
+
 export default function ProfitAndLossPage() {
   const { t } = useLanguage();
+  const MONTH_LABELS = Array.from({ length: 12 }, (_, i) => t(`date.month${i}`));
   const [unit, setUnit] = useState<BusinessUnit>("b2b");
-  const [range, setRange] = useState(defaultReportRange());
-  const [data, setData] = useState<ProfitAndLossResult | null>(null);
+  const [period, setPeriod] = useState<Period>(thisMonthPeriod());
+  const [comparison, setComparison] = useState<ComparisonMode>({ type: "none" });
+  const [columns, setColumns] = useState<Column[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
-    api
-      .profitAndLossForUnit(range.from, range.to, unit)
-      .then(setData)
+    const periods = expandComparison(period, comparison);
+    Promise.all(periods.map((p) => api.profitAndLossForUnit(p.from, p.to, unit).then((data) => ({ period: p, data }))))
+      .then(setColumns)
       .catch(() => {})
       .finally(() => setLoading(false));
   }
 
   useEffect(load, [unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  async function handleExport() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await api.exportProfitAndLoss(period.from, period.to, unit);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : t("common.exportError"));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const primaryData = columns[0]?.data ?? null;
+  const isComparing = columns.length > 1;
+  const incomeMaps = buildColumnMaps(columns.map((c) => ({ rows: c.data.income })));
+  const expenseMaps = buildColumnMaps(columns.map((c) => ({ rows: c.data.expense })));
+  const incomeAccounts = activeAccountsAcrossColumns(columns.map((c) => ({ rows: c.data.income })));
+  const expenseAccounts = activeAccountsAcrossColumns(columns.map((c) => ({ rows: c.data.expense })));
+
   return (
     <div>
       <PageHeader title={t("profitLoss.title")} subtitle={t("profitLoss.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
 
-      <div className="relative z-40 mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4">
-        <label className="text-sm">
-          <span className="mb-1 block text-zinc-600">{t("profitLoss.fromLabel")}</span>
-          <DatePicker value={range.from} onChange={(v) => setRange((r) => ({ ...r, from: v }))} />
-        </label>
-        <label className="text-sm">
-          <span className="mb-1 block text-zinc-600">{t("profitLoss.toLabel")}</span>
-          <DatePicker value={range.to} onChange={(v) => setRange((r) => ({ ...r, to: v }))} maxDate={new Date().toISOString().slice(0, 10)}
-          />
-        </label>
+      <div className="relative z-40 mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <PeriodPicker value={period} onChange={setPeriod} />
+        <ComparisonPicker value={comparison} onChange={setComparison} />
         <button
           onClick={load}
           disabled={loading}
@@ -59,30 +84,42 @@ export default function ProfitAndLossPage() {
         >
           {loading ? t("common.loading") : t("profitLoss.showButton")}
         </button>
+        {columns.length > 0 && (
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="ml-auto flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" />
+            {exporting ? t("common.exporting") : t("common.exportExcel")}
+          </button>
+        )}
       </div>
 
-      {data && (
+      {exportError && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{exportError}</p>}
+
+      {primaryData && (
         <>
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatTile icon={TrendingUp} iconClass="bg-emerald-50 text-emerald-600" label={t("profitLoss.totalIncome")} value={formatRupiah(data.totalIncome)} />
-            <StatTile icon={TrendingDown} iconClass="bg-red-50 text-red-600" label={t("profitLoss.totalExpense")} value={formatRupiah(data.totalExpense)} />
+            <StatTile icon={TrendingUp} iconClass="bg-emerald-50 text-emerald-600" label={t("profitLoss.totalIncome")} value={formatRupiah(primaryData.totalIncome)} />
+            <StatTile icon={TrendingDown} iconClass="bg-red-50 text-red-600" label={t("profitLoss.totalExpense")} value={formatRupiah(primaryData.totalExpense)} />
             <StatTile
               icon={Wallet}
-              iconClass={data.netProfit >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}
+              iconClass={primaryData.netProfit >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}
               label={t("profitLoss.netProfit")}
-              value={formatRupiah(data.netProfit)}
-              valueClass={data.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}
+              value={formatRupiah(primaryData.netProfit)}
+              valueClass={primaryData.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}
             />
           </div>
 
           {(() => {
-            const incomeChart = data.income
+            const incomeChart = primaryData.income
               .map((r) => ({ name: r.account.name, value: r.periodCredit - r.periodDebit }))
               .filter((r) => r.value > 0)
               .sort((a, b) => b.value - a.value)
               .slice(0, 8)
               .reverse();
-            const expenseChart = data.expense
+            const expenseChart = primaryData.expense
               .map((r) => ({ name: r.account.name, value: r.periodDebit - r.periodCredit }))
               .filter((r) => r.value > 0)
               .sort((a, b) => b.value - a.value)
@@ -124,27 +161,64 @@ export default function ProfitAndLossPage() {
           })()}
 
           <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6">
+            {isComparing && (
+              <div className="mb-2 flex text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                <div className="flex-1" />
+                {columns.map((col) => (
+                  <div key={col.period.from + col.period.to} className="flex-1 text-right">
+                    {periodLabel(col.period, MONTH_LABELS)}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{t("profitLoss.incomeSection")}</h2>
             <table className="mb-6 w-full text-sm">
               <tbody>
-                {data.income
-                  .filter((r) => r.periodCredit !== 0 || r.periodDebit !== 0)
-                  .map((r) => (
-                    <tr key={r.account.id} className="border-b border-zinc-50">
-                      <td className="py-1.5">{r.account.name}</td>
-                      <td className="py-1.5 text-right">{formatRupiah(r.periodCredit - r.periodDebit)}</td>
+                {!isComparing &&
+                  primaryData.income
+                    .filter((r) => r.periodCredit !== 0 || r.periodDebit !== 0)
+                    .map((r) => (
+                      <tr key={r.account.id} className="border-b border-zinc-50">
+                        <td className="py-1.5">{r.account.name}</td>
+                        <td className="py-1.5 text-right">
+                          <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.periodCredit - r.periodDebit} />
+                        </td>
+                      </tr>
+                    ))}
+                {isComparing &&
+                  incomeAccounts.map((acc) => (
+                    <tr key={acc.id} className="border-b border-zinc-50">
+                      <td className="py-1.5">{acc.name}</td>
+                      {columns.map((col, i) => {
+                        const row = incomeMaps[i].get(acc.id);
+                        const value = row ? row.periodCredit - row.periodDebit : 0;
+                        return (
+                          <td key={col.period.from + col.period.to} className="py-1.5 text-right">
+                            <AmountLink accountId={acc.id} from={col.period.from} to={col.period.to} unit={unit} value={value} />
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
-                {!data.income.some((r) => r.periodCredit !== 0 || r.periodDebit !== 0) && (
+                {!(isComparing ? incomeAccounts.length : primaryData.income.some((r) => r.periodCredit !== 0 || r.periodDebit !== 0)) && (
                   <tr>
-                    <td colSpan={2} className="py-4 text-center text-zinc-400">
+                    <td colSpan={isComparing ? 1 + columns.length : 2} className="py-4 text-center text-zinc-400">
                       {t("profitLoss.noIncome")}
                     </td>
                   </tr>
                 )}
                 <tr className="font-semibold">
                   <td className="pt-2">{t("profitLoss.totalIncome")}</td>
-                  <td className="pt-2 text-right">{formatRupiah(data.totalIncome)}</td>
+                  {isComparing ? (
+                    columns.map((col, i) => (
+                      <td key={col.period.from + col.period.to} className="pt-2 text-right">
+                        {formatRupiah(columns[i].data.totalIncome)}
+                      </td>
+                    ))
+                  ) : (
+                    <td className="pt-2 text-right">{formatRupiah(primaryData.totalIncome)}</td>
+                  )}
                 </tr>
               </tbody>
             </table>
@@ -152,31 +226,67 @@ export default function ProfitAndLossPage() {
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-zinc-500">{t("profitLoss.expenseSection")}</h2>
             <table className="mb-6 w-full text-sm">
               <tbody>
-                {data.expense
-                  .filter((r) => r.periodDebit !== 0 || r.periodCredit !== 0)
-                  .map((r) => (
-                    <tr key={r.account.id} className="border-b border-zinc-50">
-                      <td className="py-1.5">{r.account.name}</td>
-                      <td className="py-1.5 text-right">{formatRupiah(r.periodDebit - r.periodCredit)}</td>
+                {!isComparing &&
+                  primaryData.expense
+                    .filter((r) => r.periodDebit !== 0 || r.periodCredit !== 0)
+                    .map((r) => (
+                      <tr key={r.account.id} className="border-b border-zinc-50">
+                        <td className="py-1.5">{r.account.name}</td>
+                        <td className="py-1.5 text-right">
+                          <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.periodDebit - r.periodCredit} />
+                        </td>
+                      </tr>
+                    ))}
+                {isComparing &&
+                  expenseAccounts.map((acc) => (
+                    <tr key={acc.id} className="border-b border-zinc-50">
+                      <td className="py-1.5">{acc.name}</td>
+                      {columns.map((col, i) => {
+                        const row = expenseMaps[i].get(acc.id);
+                        const value = row ? row.periodDebit - row.periodCredit : 0;
+                        return (
+                          <td key={col.period.from + col.period.to} className="py-1.5 text-right">
+                            <AmountLink accountId={acc.id} from={col.period.from} to={col.period.to} unit={unit} value={value} />
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
-                {!data.expense.some((r) => r.periodDebit !== 0 || r.periodCredit !== 0) && (
+                {!(isComparing ? expenseAccounts.length : primaryData.expense.some((r) => r.periodDebit !== 0 || r.periodCredit !== 0)) && (
                   <tr>
-                    <td colSpan={2} className="py-4 text-center text-zinc-400">
+                    <td colSpan={isComparing ? 1 + columns.length : 2} className="py-4 text-center text-zinc-400">
                       {t("profitLoss.noExpense")}
                     </td>
                   </tr>
                 )}
                 <tr className="font-semibold">
                   <td className="pt-2">{t("profitLoss.totalExpense")}</td>
-                  <td className="pt-2 text-right">{formatRupiah(data.totalExpense)}</td>
+                  {isComparing ? (
+                    columns.map((col, i) => (
+                      <td key={col.period.from + col.period.to} className="pt-2 text-right">
+                        {formatRupiah(columns[i].data.totalExpense)}
+                      </td>
+                    ))
+                  ) : (
+                    <td className="pt-2 text-right">{formatRupiah(primaryData.totalExpense)}</td>
+                  )}
                 </tr>
               </tbody>
             </table>
 
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-200 pt-4 text-base font-bold sm:text-lg">
               <span>{t("profitLoss.netProfit")}</span>
-              <span className={data.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}>{formatRupiah(data.netProfit)}</span>
+              {isComparing ? (
+                <div className="flex flex-1 justify-end gap-6">
+                  {columns.map((col) => (
+                    <span key={col.period.from + col.period.to} className={col.data.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}>
+                      {formatRupiah(col.data.netProfit)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <span className={primaryData.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}>{formatRupiah(primaryData.netProfit)}</span>
+              )}
             </div>
           </div>
         </>

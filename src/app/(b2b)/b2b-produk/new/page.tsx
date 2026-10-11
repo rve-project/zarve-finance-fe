@@ -53,6 +53,7 @@ export default function NewProductPage() {
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [productType, setProductType] = useState<ProductKind>("single");
+  const [type, setType] = useState<"barang" | "jasa">("barang");
 
   const [trackPurchase, setTrackPurchase] = useState(true);
   const [purchasePrice, setPurchasePrice] = useState("");
@@ -117,6 +118,13 @@ export default function NewProductPage() {
     if (next === "bundle") setTrackPurchase(false);
   }
 
+  function handleTypeChange(next: "barang" | "jasa") {
+    setType(next);
+    // Jasa has no physical stock to track -- mirrors the backend's own
+    // resolvedTrackInventory = resolvedType === "barang" && trackInventory.
+    if (next === "jasa") setStockTrackingMode("none");
+  }
+
   async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -149,7 +157,7 @@ export default function NewProductPage() {
     setSubmitting(true);
     try {
       await api.createProduct({
-        type: "barang",
+        type,
         name,
         code: code || undefined,
         barcode: barcode || undefined,
@@ -240,6 +248,17 @@ export default function NewProductPage() {
               <label className="block text-sm">
                 <span className="mb-1.5 block font-medium text-zinc-700">{t("produk.form.name")} *</span>
                 <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1.5 block font-medium text-zinc-700">{t("produk.form.type")} *</span>
+                <Dropdown
+                  value={type}
+                  onChange={(v) => handleTypeChange(v as "barang" | "jasa")}
+                  options={[
+                    { value: "barang", label: t("produk.typeBarang") },
+                    { value: "jasa", label: t("produk.typeJasa") },
+                  ]}
+                />
               </label>
               <label className="block text-sm">
                 <span className="mb-1.5 block font-medium text-zinc-700">{t("produk.form.productType")} *</span>
@@ -342,18 +361,25 @@ export default function NewProductPage() {
           <SectionHeading icon={Boxes} title={t("produk.form.sectionInventoryTracking")} />
 
             <div className="space-y-3">
-              <label className="flex cursor-pointer items-start gap-2.5 text-sm">
+              <label className={`flex items-start gap-2.5 text-sm ${type === "jasa" ? "cursor-not-allowed" : "cursor-pointer"}`}>
                 <input
                   type="radio"
                   name="stockTrackingMode"
                   checked={stockTrackingMode === "track"}
+                  disabled={type === "jasa"}
                   onChange={() => setStockTrackingMode("track")}
-                  className="mt-0.5 h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                  className="mt-0.5 h-4 w-4 border-zinc-300 text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
                 />
                 <span>
-                  <span className="block font-medium text-zinc-800">{t("produk.form.trackingModeTrack")}</span>
+                  <span className={`block font-medium ${type === "jasa" ? "text-zinc-400" : "text-zinc-800"}`}>{t("produk.form.trackingModeTrack")}</span>
                   <span className="mt-0.5 block text-xs text-zinc-400">
-                    {t(productType === "bundle" ? "produk.form.trackingModeTrackDescBundle" : "produk.form.trackingModeTrackDesc")}
+                    {t(
+                      type === "jasa"
+                        ? "produk.form.trackingModeTrackDescJasa"
+                        : productType === "bundle"
+                          ? "produk.form.trackingModeTrackDescBundle"
+                          : "produk.form.trackingModeTrackDesc"
+                    )}
                   </span>
                 </span>
               </label>

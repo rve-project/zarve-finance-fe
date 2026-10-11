@@ -9,6 +9,7 @@ import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
 import { Account, Contact, TaxCode } from "@/lib/types";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { QuickAddContactModal } from "@/components/ui/QuickAddContactModal";
 import { DatePicker } from "@/components/ui/DatePicker";
 
 const PPN_KELUARAN_CODE = "2-20500"; // output VAT -- same account purchases/sales controllers use
@@ -44,6 +45,7 @@ function ReceiveMoneyPageInner() {
   const [allAccounts, setAllAccounts] = useState<Account[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [taxes, setTaxes] = useState<TaxCode[]>([]);
+  const [quickAddContactQuery, setQuickAddContactQuery] = useState<string | null>(null);
 
   const [bankAccountId, setBankAccountId] = useState(presetAccountId);
   const [payerContactId, setPayerContactId] = useState("");
@@ -160,7 +162,14 @@ function ReceiveMoneyPageInner() {
         <div className="grid grid-cols-1 gap-5 px-6 py-6 sm:grid-cols-2 lg:grid-cols-4 sm:px-8">
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-zinc-700">{t("kasBank.payer")}</span>
-            <Dropdown value={payerContactId} onChange={setPayerContactId} options={contactOptions} placeholder={t("kasBank.payerPlaceholder")} />
+            <Dropdown
+              value={payerContactId}
+              onChange={setPayerContactId}
+              options={contactOptions}
+              placeholder={t("kasBank.payerPlaceholder")}
+              onCreateNew={setQuickAddContactQuery}
+              createLabel={t("quickAdd.addContact")}
+            />
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-zinc-700">{t("kasBank.date")}</span>
@@ -269,6 +278,18 @@ function ReceiveMoneyPageInner() {
           </button>
         </div>
       </form>
+
+      {quickAddContactQuery !== null && (
+        <QuickAddContactModal
+          type="customer"
+          initialName={quickAddContactQuery}
+          onClose={() => setQuickAddContactQuery(null)}
+          onCreated={(created) => {
+            setContacts((prev) => [...prev, created]);
+            setPayerContactId(String(created.id));
+          }}
+        />
+      )}
     </div>
   );
 }

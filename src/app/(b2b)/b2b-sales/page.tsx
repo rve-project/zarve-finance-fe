@@ -10,6 +10,9 @@ import { SaleDocType, SaleDocument, SaleStats, SaleStatus } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { Pagination } from "@/components/ui/Pagination";
+
+const LIMIT = 20;
 
 type Tab = { docType?: SaleDocType; status?: SaleStatus };
 
@@ -83,11 +86,13 @@ export default function B2bSalesPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const activeTab = TABS.find((t) => t.key === tabKey)!.tab;
   const isInvoiceTab = tabKey === "invoice";
 
   function load() {
+    setPage(1);
     setLoading(true);
     api
       .sales({ docType: activeTab.docType, status: (isInvoiceTab ? undefined : (statusFilter as any)) || activeTab.status })
@@ -108,6 +113,8 @@ export default function B2bSalesPage() {
       .filter((d) => !q || d.number.toLowerCase().includes(q) || (d.contactName ?? "").toLowerCase().includes(q))
       .filter((d) => !isInvoiceTab || !statusFilter || getPaymentStatus(d) === statusFilter);
   }, [docs, search, isInvoiceTab, statusFilter]);
+
+  const pageDocs = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
   return (
     <div>
@@ -192,7 +199,10 @@ export default function B2bSalesPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder={t("sales.searchPlaceholder")}
               className="w-full rounded-lg border border-zinc-200 py-2 pl-9 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
@@ -212,7 +222,7 @@ export default function B2bSalesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((doc) => (
+              {pageDocs.map((doc) => (
                 <tr key={doc.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                   <td className="px-4 py-2.5 text-zinc-500">{formatDate(doc.documentDate)}</td>
                   <td className="px-4 py-2.5 font-medium">
@@ -254,6 +264,8 @@ export default function B2bSalesPage() {
           </table>
         </div>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={filtered.length} onChange={setPage} itemLabel={t("sales.itemLabel")} />
     </div>
   );
 }

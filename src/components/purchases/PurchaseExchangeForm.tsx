@@ -9,6 +9,7 @@ import { formatDate, formatRupiah } from "@/lib/format";
 import { Contact, CreatePurchaseInput, PurchaseDocument, PurchaseDocumentDetail } from "@/lib/types";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { QuickAddContactModal } from "@/components/ui/QuickAddContactModal";
 
 interface ExchangeLineDraft {
   invoice: PurchaseDocument;
@@ -34,8 +35,11 @@ export function PurchaseExchangeForm({ initial, cancelHref, onSubmit }: Purchase
   const { t } = useLanguage();
 
   const [suppliers, setSuppliers] = useState<Contact[]>([]);
+  const [quickAddSupplierQuery, setQuickAddSupplierQuery] = useState<string | null>(null);
   const [candidateInvoices, setCandidateInvoices] = useState<PurchaseDocument[]>([]);
 
+  const [numberMode, setNumberMode] = useState<"auto" | "custom">("auto");
+  const [number, setNumber] = useState("");
   const [contactId, setContactId] = useState(initial?.contactId ? String(initial.contactId) : "");
   const [email, setEmail] = useState(initial?.email ?? "");
   const [billingAddress, setBillingAddress] = useState(initial?.billingAddress ?? "");
@@ -117,6 +121,7 @@ export function PurchaseExchangeForm({ initial, cancelHref, onSubmit }: Purchase
     setSubmitting(true);
     try {
       await onSubmit({
+        number: !initial && numberMode === "custom" ? number.trim() || undefined : undefined,
         contactId: contactId ? Number(contactId) : undefined,
         documentDate,
         dueDate: dueDate || undefined,
@@ -146,13 +151,21 @@ export function PurchaseExchangeForm({ initial, cancelHref, onSubmit }: Purchase
     "w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500";
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
       {error && <p className="mx-6 mt-6 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 sm:mx-8">{error}</p>}
 
       <div className="grid grid-cols-1 gap-5 px-6 py-6 sm:grid-cols-2 sm:px-8">
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.supplier")} *</span>
-          <Dropdown value={contactId} onChange={setContactId} options={supplierOptions} placeholder={t("purchases.new.supplierPlaceholder")} />
+          <Dropdown
+            value={contactId}
+            onChange={setContactId}
+            options={supplierOptions}
+            placeholder={t("purchases.new.supplierPlaceholder")}
+            onCreateNew={setQuickAddSupplierQuery}
+            createLabel={t("quickAdd.addContact")}
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.email")}</span>
@@ -171,7 +184,37 @@ export function PurchaseExchangeForm({ initial, cancelHref, onSubmit }: Purchase
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.number")}</span>
-          <input disabled value={initial?.number ?? t("purchases.new.exchangeNumberAuto")} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+          {initial ? (
+            <input disabled value={initial.number} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex shrink-0 overflow-hidden rounded-lg border border-zinc-200">
+                {(["auto", "custom"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setNumberMode(mode)}
+                    className={`px-2.5 py-2 text-xs font-semibold transition-colors ${
+                      numberMode === mode ? "bg-emerald-600 text-white" : "bg-white text-zinc-500 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {mode === "auto" ? t("purchases.new.numberModeAuto") : t("purchases.new.numberModeCustom")}
+                  </button>
+                ))}
+              </div>
+              {numberMode === "auto" ? (
+                <input disabled value={t("purchases.new.exchangeNumberAuto")} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+              ) : (
+                <input
+                  autoFocus
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder={t("purchases.new.numberCustomPlaceholder")}
+                  className={inputClass}
+                />
+              )}
+            </div>
+          )}
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.dueDate")} *</span>
@@ -271,5 +314,18 @@ export function PurchaseExchangeForm({ initial, cancelHref, onSubmit }: Purchase
         </button>
       </div>
     </form>
+
+    {quickAddSupplierQuery !== null && (
+      <QuickAddContactModal
+        type="vendor"
+        initialName={quickAddSupplierQuery}
+        onClose={() => setQuickAddSupplierQuery(null)}
+        onCreated={(created) => {
+          setSuppliers((prev) => [...prev, created]);
+          setContactId(String(created.id));
+        }}
+      />
+    )}
+    </>
   );
 }

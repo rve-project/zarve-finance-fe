@@ -7,8 +7,11 @@ import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { Contact, ContactType } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
 
 type ContactTab = ContactType | "all";
+
+const LIMIT = 20;
 
 const TABS: { value: ContactTab; labelKey: string; icon: typeof UsersRound }[] = [
   { value: "customer", labelKey: "contacts.tabCustomer", icon: UsersRound },
@@ -30,8 +33,10 @@ export default function ContactsPage() {
   const [tab, setTab] = useState<ContactTab>("customer");
   const [search, setSearch] = useState("");
   const [contacts, setContacts] = useState<Contact[] | null>(null);
+  const [page, setPage] = useState(1);
 
   function load() {
+    setPage(1);
     api
       .contacts({ type: tab === "all" ? undefined : tab, search: search || undefined })
       .then(setContacts)
@@ -39,6 +44,9 @@ export default function ContactsPage() {
   }
 
   useEffect(load, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalItems = contacts?.length ?? 0;
+  const pageContacts = contacts?.slice((page - 1) * LIMIT, page * LIMIT) ?? null;
 
   return (
     <div>
@@ -102,16 +110,16 @@ export default function ContactsPage() {
               </tr>
             </thead>
             <tbody>
-              {contacts?.map((c) => {
+              {pageContacts?.map((c) => {
                 return (
                   <tr key={c.id} className="border-b border-zinc-50 transition-colors hover:bg-zinc-50/80">
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
+                      <Link href={`/b2b-contacts/${c.id}`} className="flex items-center gap-2.5">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-700">
                           {c.name.slice(0, 1).toUpperCase()}
                         </span>
                         <div>
-                          <p className="font-medium text-zinc-800">{c.name}</p>
+                          <p className="font-medium text-zinc-800 hover:text-emerald-600 hover:underline">{c.name}</p>
                           {tab === "all" && (
                             <div className="mt-0.5 flex flex-wrap gap-1">
                               {c.types.map((type) => (
@@ -122,7 +130,7 @@ export default function ContactsPage() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-zinc-500">{c.companyName ?? "-"}</td>
                     <td className="px-4 py-3 text-zinc-500">{c.address ?? "-"}</td>
@@ -149,6 +157,8 @@ export default function ContactsPage() {
           </table>
         </div>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={totalItems} onChange={setPage} itemLabel={t("contacts.itemLabel")} />
     </div>
   );
 }

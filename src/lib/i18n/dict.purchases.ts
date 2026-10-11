@@ -4,6 +4,7 @@ export const dictPurchases: Record<string, Record<"id" | "en", string>> = {
   "nav.pembelian": { id: "Pembelian", en: "Purchases" },
 
   "purchases.title": { id: "Pembelian", en: "Purchases" },
+  "purchases.itemLabel": { id: "dokumen", en: "documents" },
   "purchases.createNew": { id: "Buat pembelian baru", en: "Create new purchase" },
   "purchases.docTypeRequest": { id: "Permintaan pembelian", en: "Purchase request" },
   "purchases.docTypeQuotation": { id: "Penawaran pembelian", en: "Purchase quotation" },
@@ -64,6 +65,9 @@ export const dictPurchases: Record<string, Record<"id" | "en", string>> = {
   "purchases.new.reference": { id: "Referensi", en: "Reference" },
   "purchases.new.number": { id: "Nomor", en: "Number" },
   "purchases.new.numberAuto": { id: "[Otomatis]", en: "[Auto]" },
+  "purchases.new.numberModeAuto": { id: "Otomatis", en: "Auto" },
+  "purchases.new.numberModeCustom": { id: "Custom", en: "Custom" },
+  "purchases.new.numberCustomPlaceholder": { id: "Ketik nomor dokumen...", en: "Type document number..." },
   "purchases.new.colAccount": { id: "Akun", en: "Account" },
   "purchases.new.colDescription": { id: "Deskripsi", en: "Description" },
   "purchases.new.colQty": { id: "Qty", en: "Qty" },

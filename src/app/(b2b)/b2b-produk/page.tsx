@@ -18,6 +18,9 @@ import {
   WarehouseTransfer,
 } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
+
+const LIMIT = 20;
 
 type TopTab = "goods" | "warehouse";
 type GoodsSubTab = "list" | "adjustments" | "approval";
@@ -160,14 +163,17 @@ function ProductListTab({
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [data, setData] = useState<ProductListResult | null>(null);
+  const [page, setPage] = useState(1);
 
   function load() {
+    setPage(1);
     api.products({ search: search || undefined, includeArchived: showArchived }).then(setData).catch(() => {});
   }
 
   useEffect(load, [showArchived]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const products: Product[] = data?.products ?? [];
+  const pageProducts = products.slice((page - 1) * LIMIT, page * LIMIT);
 
   return (
     <div>
@@ -212,9 +218,13 @@ function ProductListTab({
             </tr>
           </thead>
           <tbody>
-            {products.map((p) => (
+            {pageProducts.map((p) => (
               <tr key={p.id} className="border-b border-zinc-50 hover:bg-zinc-50">
-                <td className="px-4 py-2.5 font-medium text-zinc-800">{p.name}</td>
+                <td className="px-4 py-2.5 font-medium text-zinc-800">
+                  <Link href={`/b2b-produk/${p.id}`} className="hover:text-emerald-600 hover:underline">
+                    {p.name}
+                  </Link>
+                </td>
                 <td className="px-4 py-2.5 font-mono text-xs">{p.code}</td>
                 <td className="px-4 py-2.5 text-zinc-500">{p.categoryName ?? "-"}</td>
                 <td className="px-4 py-2.5 text-zinc-500">{t(p.type === "barang" ? "produk.typeBarang" : "produk.typeJasa")}</td>
@@ -239,6 +249,8 @@ function ProductListTab({
         </table>
       </div>
 
+      <Pagination page={page} limit={LIMIT} total={products.length} onChange={setPage} itemLabel={t("produk.itemLabel")} />
+
       {showCategoryModal && <CategoryModal onClose={onCloseCategoryModal} />}
     </div>
   );
@@ -259,10 +271,14 @@ const ADJUSTMENT_CATEGORY_KEYS: Record<StockAdjustmentCategory, string> = {
 function StockAdjustmentsTab() {
   const { t } = useLanguage();
   const [adjustments, setAdjustments] = useState<StockAdjustment[] | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     api.stockAdjustments().then(setAdjustments).catch(() => {});
   }, []);
+
+  const totalItems = adjustments?.length ?? 0;
+  const pageAdjustments = adjustments?.slice((page - 1) * LIMIT, page * LIMIT) ?? null;
 
   return (
     <div>
@@ -288,7 +304,7 @@ function StockAdjustmentsTab() {
             </tr>
           </thead>
           <tbody>
-            {adjustments?.map((a) => (
+            {pageAdjustments?.map((a) => (
               <tr key={a.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                 <td className="px-4 py-2.5 font-mono text-xs">{a.adjustmentNumber}</td>
                 <td className="px-4 py-2.5 text-zinc-500">{a.adjustmentDate}</td>
@@ -308,6 +324,8 @@ function StockAdjustmentsTab() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={totalItems} onChange={setPage} itemLabel={t("produk.adjustments.itemLabel")} />
     </div>
   );
 }
@@ -315,10 +333,14 @@ function StockAdjustmentsTab() {
 function WarehouseTransfersTab() {
   const { t } = useLanguage();
   const [transfers, setTransfers] = useState<WarehouseTransfer[] | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     api.warehouseTransfers().then(setTransfers).catch(() => {});
   }, []);
+
+  const totalItems = transfers?.length ?? 0;
+  const pageTransfers = transfers?.slice((page - 1) * LIMIT, page * LIMIT) ?? null;
 
   return (
     <div>
@@ -343,7 +365,7 @@ function WarehouseTransfersTab() {
             </tr>
           </thead>
           <tbody>
-            {transfers?.map((tr) => (
+            {pageTransfers?.map((tr) => (
               <tr key={tr.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                 <td className="px-4 py-2.5 font-mono text-xs">{tr.transferNumber}</td>
                 <td className="px-4 py-2.5 text-zinc-500">{tr.transferDate}</td>
@@ -362,6 +384,8 @@ function WarehouseTransfersTab() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={totalItems} onChange={setPage} itemLabel={t("produk.warehouse.transfer.itemLabel")} />
     </div>
   );
 }
@@ -371,12 +395,17 @@ function WarehouseListTab() {
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [warehouses, setWarehouses] = useState<Warehouse[] | null>(null);
+  const [page, setPage] = useState(1);
 
   function load() {
+    setPage(1);
     api.warehouses({ search: search || undefined, includeArchived: showArchived }).then(setWarehouses).catch(() => {});
   }
 
   useEffect(load, [showArchived]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalItems = warehouses?.length ?? 0;
+  const pageWarehouses = warehouses?.slice((page - 1) * LIMIT, page * LIMIT) ?? null;
 
   return (
     <div>
@@ -417,7 +446,7 @@ function WarehouseListTab() {
             </tr>
           </thead>
           <tbody>
-            {warehouses?.map((w) => (
+            {pageWarehouses?.map((w) => (
               <tr key={w.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                 <td className="px-4 py-2.5 font-mono text-xs">{w.code}</td>
                 <td className="px-4 py-2.5 font-medium text-zinc-800">{w.name}</td>
@@ -447,6 +476,8 @@ function WarehouseListTab() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={totalItems} onChange={setPage} itemLabel={t("produk.warehouse.itemLabel")} />
     </div>
   );
 }

@@ -66,4 +66,24 @@ export const dictFinancialReportsA: Record<string, Record<"id" | "en", string>> 
   "balanceSheet.totalLiabilitiesEquity": { id: "Total Liabilitas + Ekuitas", en: "Total Liabilities + Equity" },
   "balanceSheet.noDataPrefix": { id: "Tidak ada", en: "No" },
   "balanceSheet.totalPrefix": { id: "Total", en: "Total" },
+
+  // Statement of Changes in Equity (Laporan Perubahan Modal) page
+  "equityChanges.title": { id: "Laporan Perubahan Modal", en: "Statement of Changes in Equity" },
+  "equityChanges.subtitle": {
+    id: "Saldo awal, perubahan, dan saldo akhir tiap akun ekuitas dalam periode",
+    en: "Beginning balance, movement, and ending balance of each equity account for the period",
+  },
+  "equityChanges.fromLabel": { id: "Dari", en: "From" },
+  "equityChanges.toLabel": { id: "Sampai", en: "To" },
+  "equityChanges.showButton": { id: "Tampilkan", en: "Show" },
+  "equityChanges.totalBeginning": { id: "Total Saldo Awal", en: "Total Beginning Balance" },
+  "equityChanges.totalMovement": { id: "Total Perubahan", en: "Total Movement" },
+  "equityChanges.totalEnding": { id: "Total Saldo Akhir", en: "Total Ending Balance" },
+  "equityChanges.colCode": { id: "Kode", en: "Code" },
+  "equityChanges.colAccountName": { id: "Nama Akun", en: "Account Name" },
+  "equityChanges.colBeginning": { id: "Saldo Awal", en: "Beginning Balance" },
+  "equityChanges.colMovement": { id: "Perubahan", en: "Movement" },
+  "equityChanges.colEnding": { id: "Saldo Akhir", en: "Ending Balance" },
+  "equityChanges.totalRow": { id: "Total Ekuitas", en: "Total Equity" },
+  "equityChanges.emptyState": { id: "Tidak ada data ekuitas untuk periode ini.", en: "No equity data for this period." },
 };

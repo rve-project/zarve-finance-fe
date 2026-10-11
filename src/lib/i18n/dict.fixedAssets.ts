@@ -11,6 +11,9 @@ export const dictFixedAssets: Record<string, Record<"id" | "en", string>> = {
   "fixedAssets.tabDisposed": { id: "Dijual/Dilepas", en: "Sold/Disposed" },
   "fixedAssets.tabDepreciation": { id: "Penyusutan", en: "Depreciation" },
 
+  "fixedAssets.pending.itemLabel": { id: "aset", en: "assets" },
+  "fixedAssets.active.itemLabel": { id: "aset", en: "assets" },
+  "fixedAssets.disposed.itemLabel": { id: "aset", en: "assets" },
   "fixedAssets.pending.heading": { id: "Aset Belum Tersimpan", en: "Unsaved Assets" },
   "fixedAssets.pending.colDate": { id: "Tanggal Akuisisi", en: "Acquisition Date" },
   "fixedAssets.pending.colItem": { id: "Barang", en: "Item" },
@@ -55,9 +58,27 @@ export const dictFixedAssets: Record<string, Record<"id" | "en", string>> = {
   "fixedAssets.depreciation.empty": { id: "Anda tidak memiliki aset yang akan disusutkan", en: "You have no assets to depreciate" },
   "fixedAssets.depreciation.methodStraightLine": { id: "Garis Lurus", en: "Straight Line" },
   "fixedAssets.depreciation.note": {
-    id: "Jadwal ini hanya referensi -- posting jurnal penyusutan tetap dilakukan manual lewat Jurnal Manual.",
-    en: "This schedule is reference only -- the depreciation journal entry is still posted manually via Manual Journal.",
+    id: "Jurnal penyusutan diposting otomatis tiap malam jam 02:30 WIB. Tombol \"Jalankan Penyusutan\" cuma buat posting sekarang juga tanpa nunggu jadwal malam -- bulan-bulan sebelumnya yang kelewat akan ikut diposting sekaligus.",
+    en: "Depreciation journal entries post automatically every night at 02:30 WIB. The \"Run Depreciation\" button just posts right now instead of waiting for the nightly schedule -- any earlier missed months get caught up at the same time.",
   },
+  "fixedAssets.depreciation.colStatus": { id: "Status", en: "Status" },
+  "fixedAssets.depreciation.posted": { id: "Sudah Diposting", en: "Posted" },
+  "fixedAssets.depreciation.notPosted": { id: "Belum Diposting", en: "Not Posted" },
+  "fixedAssets.depreciation.runButton": { id: "Jalankan Sekarang", en: "Run Now" },
+  "fixedAssets.depreciation.running": { id: "Memproses...", en: "Processing..." },
+  "fixedAssets.depreciation.runError": { id: "Gagal menjalankan penyusutan", en: "Failed to run depreciation" },
+  "fixedAssets.depreciation.runSuccess": { id: "{count} jurnal penyusutan berhasil diposting.", en: "{count} depreciation entries posted." },
+  "fixedAssets.depreciation.runSkipped": { id: "aset dilewati (akun belum lengkap)", en: "assets skipped (missing accounts)" },
+
+  "fixedAssets.board.toggle": { id: "Papan Penyusutan", en: "Depreciation Board" },
+  "fixedAssets.board.heading": { id: "Papan Penyusutan (seumur masa manfaat)", en: "Depreciation Board (full useful life)" },
+  "fixedAssets.board.empty": { id: "Tidak ada jadwal penyusutan untuk aset ini.", en: "No depreciation schedule for this asset." },
+  "fixedAssets.board.colPeriod": { id: "Periode", en: "Period" },
+  "fixedAssets.board.colAmount": { id: "Penyusutan", en: "Depreciation" },
+  "fixedAssets.board.colCumulative": { id: "Akumulasi", en: "Cumulative" },
+  "fixedAssets.board.colRemaining": { id: "Nilai Buku Sisa", en: "Remaining Book Value" },
+  "fixedAssets.board.colStatus": { id: "Status", en: "Status" },
+  "fixedAssets.board.itemLabel": { id: "periode", en: "periods" },
 
   "fixedAssets.dispose.dateLabel": { id: "Tanggal Pelepasan", en: "Disposal Date" },
   "fixedAssets.dispose.amountLabel": { id: "Harga Jual", en: "Sale Price" },
@@ -138,16 +159,14 @@ export const dictFixedAssets: Record<string, Record<"id" | "en", string>> = {
   },
 
   // D'Consulting audit gap #3: distinguish an internal operational vehicle (RVE's own
-  // car, outside the Zarve rental fleet) from any other fixed asset.
+  // car, outside the Zarve rental fleet) from any other fixed asset. Jenis Aset is a
+  // user-managed list (fixed_asset_types) -- see QuickAddFixedAssetTypeModal.
   "fixedAssets.new.assetType": { id: "Jenis Aset", en: "Asset Type" },
-  "fixedAssets.new.assetTypeGeneral": { id: "Umum", en: "General" },
-  "fixedAssets.new.assetTypeVehicle": { id: "Kendaraan Operasional", en: "Operational Vehicle" },
   "fixedAssets.new.hint.assetType": {
-    id: "Pilih 'Kendaraan Operasional' untuk kendaraan milik RVE sendiri di luar armada rental (yang tercatat di menu Kendaraan/Zarve).",
-    en: "Choose 'Operational Vehicle' for RVE's own car outside the rental fleet (which is tracked under the Vehicles/Zarve menu).",
+    id: "Pilih 'Kendaraan Operasional' untuk kendaraan milik RVE sendiri di luar armada rental (yang tercatat di menu Kendaraan/Zarve), atau tambahkan jenis aset baru sendiri.",
+    en: "Choose 'Operational Vehicle' for RVE's own car outside the rental fleet (which is tracked under the Vehicles/Zarve menu), or add your own new asset type.",
   },
   "fixedAssets.new.plateNumber": { id: "Plat Nomor", en: "Plate Number" },
-  "fixedAssets.assetTypeVehicleBadge": { id: "Kendaraan", en: "Vehicle" },
 
   // D'Consulting audit gap #5: revaluation / impairment.
   "fixedAssets.revalue.action": { id: "Revaluasi", en: "Revalue" },

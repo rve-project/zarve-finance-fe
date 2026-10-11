@@ -1,0 +1,36 @@
+// Translation dictionary for the "Template Dokumen" settings tab and the shared print
+// template it configures (components/print/DocumentPrintTemplate.tsx). Merge into the
+// main dict in src/lib/i18n.tsx.
+export const dictDocumentSettings: Record<string, Record<"id" | "en", string>> = {
+  "documentSettings.tabTitle": { id: "Template Dokumen", en: "Document Template" },
+  "documentSettings.previewTitle": { id: "Preview Cetak", en: "Print Preview" },
+  "documentSettings.sectionCompany": { id: "Profil Perusahaan", en: "Company Profile" },
+  "documentSettings.companyName": { id: "Nama Perusahaan", en: "Company Name" },
+  "documentSettings.address": { id: "Alamat", en: "Address" },
+  "documentSettings.phone": { id: "Telepon", en: "Phone" },
+  "documentSettings.email": { id: "Email", en: "Email" },
+  "documentSettings.logo": { id: "Logo", en: "Logo" },
+  "documentSettings.logoUpload": { id: "Unggah Logo", en: "Upload Logo" },
+  "documentSettings.logoUploading": { id: "Mengunggah...", en: "Uploading..." },
+  "documentSettings.logoRemove": { id: "Hapus Logo", en: "Remove Logo" },
+  "documentSettings.sectionBank": { id: "Info Rekening Bank", en: "Bank Account Info" },
+  "documentSettings.bankInfoTitle": { id: "Informasi Pembayaran", en: "Payment Information" },
+  "documentSettings.bankName": { id: "Nama Bank", en: "Bank Name" },
+  "documentSettings.bankAccountNumber": { id: "Nomor Rekening", en: "Account Number" },
+  "documentSettings.bankAccountHolder": { id: "Atas Nama", en: "Account Holder" },
+  "documentSettings.sectionSections": { id: "Bagian yang Ditampilkan di Cetakan", en: "Sections Shown on Print" },
+  "documentSettings.showLogo": { id: "Tampilkan logo perusahaan", en: "Show company logo" },
+  "documentSettings.showBankInfo": { id: "Tampilkan info rekening bank", en: "Show bank account info" },
+  "documentSettings.showPaymentTerm": { id: "Tampilkan syarat pembayaran", en: "Show payment term" },
+  "documentSettings.showNotes": { id: "Tampilkan catatan kaki", en: "Show footer note" },
+  "documentSettings.footerNote": { id: "Catatan Kaki", en: "Footer Note" },
+  "documentSettings.footerNotePlaceholder": {
+    id: "mis. Terima kasih atas kerja samanya. Pembayaran mohon ditransfer sebelum jatuh tempo.",
+    en: "e.g. Thank you for your business. Please transfer payment before the due date.",
+  },
+  "documentSettings.save": { id: "Simpan Template", en: "Save Template" },
+  "documentSettings.saving": { id: "Menyimpan...", en: "Saving..." },
+  "documentSettings.saved": { id: "Template dokumen tersimpan.", en: "Document template saved." },
+  "documentSettings.errorSave": { id: "Gagal menyimpan template dokumen", en: "Failed to save document template" },
+  "documentSettings.errorLoad": { id: "Gagal memuat template dokumen", en: "Failed to load document template" },
+};

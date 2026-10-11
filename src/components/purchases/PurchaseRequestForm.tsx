@@ -8,6 +8,8 @@ import { useLanguage } from "@/lib/i18n";
 import { Contact, CreatePurchaseInput, ManagedUser, Product, PurchaseDocumentDetail } from "@/lib/types";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { QuickAddContactModal } from "@/components/ui/QuickAddContactModal";
+import { QuickAddProductModal } from "@/components/ui/QuickAddProductModal";
 
 interface LineDraft {
   productId: string;
@@ -45,7 +47,11 @@ export function PurchaseRequestForm({ initial, cancelHref, onSubmit }: PurchaseR
   const [staff, setStaff] = useState<ManagedUser[]>([]);
   const [suppliers, setSuppliers] = useState<Contact[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [quickAddSupplierQuery, setQuickAddSupplierQuery] = useState<string | null>(null);
+  const [quickAddProductFor, setQuickAddProductFor] = useState<{ lineIndex: number; query: string } | null>(null);
 
+  const [numberMode, setNumberMode] = useState<"auto" | "custom">("auto");
+  const [number, setNumber] = useState("");
   const [approverUserId, setApproverUserId] = useState(initial?.approverUserId ? String(initial.approverUserId) : "");
   const [approverEmail, setApproverEmail] = useState(initial?.approverEmail ?? "");
   const [contactId, setContactId] = useState(initial?.contactId ? String(initial.contactId) : "");
@@ -114,6 +120,7 @@ export function PurchaseRequestForm({ initial, cancelHref, onSubmit }: PurchaseR
     setSubmitting(true);
     try {
       await onSubmit({
+        number: !initial && numberMode === "custom" ? number.trim() || undefined : undefined,
         contactId: contactId ? Number(contactId) : undefined,
         documentDate,
         dueDate: dueDate || undefined,
@@ -146,6 +153,7 @@ export function PurchaseRequestForm({ initial, cancelHref, onSubmit }: PurchaseR
   const disabledInputClass = `${inputClass} bg-zinc-50 text-zinc-400`;
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
       {error && <p className="mx-6 mt-6 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 sm:mx-8">{error}</p>}
 
@@ -163,7 +171,14 @@ export function PurchaseRequestForm({ initial, cancelHref, onSubmit }: PurchaseR
       <div className="grid grid-cols-1 gap-5 border-t border-zinc-100 px-6 py-6 sm:grid-cols-2 sm:px-8">
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.supplierName")}</span>
-          <Dropdown value={contactId} onChange={setContactId} options={supplierOptions} placeholder={t("purchases.new.supplierPlaceholder")} />
+          <Dropdown
+            value={contactId}
+            onChange={setContactId}
+            options={supplierOptions}
+            placeholder={t("purchases.new.supplierPlaceholder")}
+            onCreateNew={setQuickAddSupplierQuery}
+            createLabel={t("quickAdd.addContact")}
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.supplierAddress")}</span>
@@ -190,7 +205,37 @@ export function PurchaseRequestForm({ initial, cancelHref, onSubmit }: PurchaseR
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.number")}</span>
-          <input disabled value={initial?.number ?? t("purchases.new.numberAuto")} className={disabledInputClass} />
+          {initial ? (
+            <input disabled value={initial.number} className={disabledInputClass} />
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex shrink-0 overflow-hidden rounded-lg border border-zinc-200">
+                {(["auto", "custom"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setNumberMode(mode)}
+                    className={`px-2.5 py-2 text-xs font-semibold transition-colors ${
+                      numberMode === mode ? "bg-emerald-600 text-white" : "bg-white text-zinc-500 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {mode === "auto" ? t("purchases.new.numberModeAuto") : t("purchases.new.numberModeCustom")}
+                  </button>
+                ))}
+              </div>
+              {numberMode === "auto" ? (
+                <input disabled value={t("purchases.new.numberAuto")} className={disabledInputClass} />
+              ) : (
+                <input
+                  autoFocus
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder={t("purchases.new.numberCustomPlaceholder")}
+                  className={inputClass}
+                />
+              )}
+            </div>
+          )}
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.budgetYear")}</span>
@@ -219,7 +264,14 @@ export function PurchaseRequestForm({ initial, cancelHref, onSubmit }: PurchaseR
                 key={i}
                 className="grid grid-cols-1 gap-2 rounded-xl border border-zinc-100 p-3 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1.5fr)_100px_100px_36px] sm:items-center sm:rounded-none sm:border-0 sm:p-0"
               >
-                <Dropdown value={line.productId} onChange={(v) => selectLineProduct(i, v)} options={productOptions} placeholder={t("purchases.new.productPlaceholder")} />
+                <Dropdown
+                  value={line.productId}
+                  onChange={(v) => selectLineProduct(i, v)}
+                  options={productOptions}
+                  placeholder={t("purchases.new.productPlaceholder")}
+                  onCreateNew={(q) => setQuickAddProductFor({ lineIndex: i, query: q })}
+                  createLabel={t("quickAdd.addProduct")}
+                />
                 <input
                   value={line.description}
                   onChange={(e) => updateLine(i, { description: e.target.value })}
@@ -286,5 +338,28 @@ export function PurchaseRequestForm({ initial, cancelHref, onSubmit }: PurchaseR
         </button>
       </div>
     </form>
+
+    {quickAddSupplierQuery !== null && (
+      <QuickAddContactModal
+        type="vendor"
+        initialName={quickAddSupplierQuery}
+        onClose={() => setQuickAddSupplierQuery(null)}
+        onCreated={(created) => {
+          setSuppliers((prev) => [...prev, created]);
+          setContactId(String(created.id));
+        }}
+      />
+    )}
+    {quickAddProductFor && (
+      <QuickAddProductModal
+        initialName={quickAddProductFor.query}
+        onClose={() => setQuickAddProductFor(null)}
+        onCreated={(created) => {
+          setProducts((prev) => [...prev, created]);
+          updateLine(quickAddProductFor.lineIndex, { productId: String(created.id), description: created.name });
+        }}
+      />
+    )}
+    </>
   );
 }

@@ -6,12 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FileText, TrendingDown } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
-import { Account } from "@/lib/types";
+import { Account, FixedAssetTypeOption } from "@/lib/types";
 import { pickDefaultAccount } from "@/lib/accountDefaults";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { HelpHint } from "@/components/ui/HelpHint";
+import { QuickAddFixedAssetTypeModal } from "@/components/ui/QuickAddFixedAssetTypeModal";
 
 function SectionHeading({ icon: Icon, title }: { icon: typeof FileText; title: string }) {
   return (
@@ -44,7 +45,9 @@ function NewFixedAssetPageInner() {
   const [acquisitionCost, setAcquisitionCost] = useState(searchParams.get("amount") ?? "");
   const [creditAccountId, setCreditAccountId] = useState("");
   const [description, setDescription] = useState("");
-  const [assetType, setAssetType] = useState<"general" | "vehicle">("general");
+  const [assetTypes, setAssetTypes] = useState<FixedAssetTypeOption[]>([]);
+  const [assetType, setAssetType] = useState("");
+  const [quickAddAssetTypeQuery, setQuickAddAssetTypeQuery] = useState<string | null>(null);
   const [plateNumber, setPlateNumber] = useState("");
   const [isNonDepreciating, setIsNonDepreciating] = useState(false);
   const [methods, setMethods] = useState<string[]>([]);
@@ -81,6 +84,10 @@ function NewFixedAssetPageInner() {
       setMethods(list);
       if (list.length) setDepreciationMethod(list[0]);
     });
+    api.fixedAssetTypes().then((list) => {
+      setAssetTypes(list);
+      if (list.length) setAssetType((cur) => cur || list[0].name);
+    });
   }, []);
 
   const ratePercent = usefulLifeYears && Number(usefulLifeYears) > 0 ? (100 / Number(usefulLifeYears)).toFixed(1) : "";
@@ -90,6 +97,9 @@ function NewFixedAssetPageInner() {
     if (rate > 0) setUsefulLifeYears((100 / rate).toFixed(2));
     else setUsefulLifeYears("");
   }
+
+  const assetTypeOptions = assetTypes.map((at) => ({ value: at.name, label: at.name }));
+  const requiresPlateNumber = assetTypes.find((at) => at.name === assetType)?.requiresPlateNumber ?? false;
 
   const anyAccountOptions = accounts.map((a) => ({ value: String(a.id), label: `${a.code} - ${a.name}` }));
   // Only "straight_line" has a translated label today -- an unrecognized future value
@@ -111,7 +121,7 @@ function NewFixedAssetPageInner() {
         creditAccountId: isFromPending ? undefined : Number(creditAccountId),
         description: description || undefined,
         assetType,
-        plateNumber: assetType === "vehicle" ? plateNumber : undefined,
+        plateNumber: requiresPlateNumber ? plateNumber : undefined,
         isNonDepreciating,
         depreciationMethod: isNonDepreciating ? undefined : (depreciationMethod as "straight_line") || undefined,
         usefulLifeYears: isNonDepreciating ? undefined : Number(usefulLifeYears) || undefined,
@@ -158,14 +168,14 @@ function NewFixedAssetPageInner() {
               </span>
               <Dropdown
                 value={assetType}
-                onChange={(v) => setAssetType(v as "general" | "vehicle")}
-                options={[
-                  { value: "general", label: t("fixedAssets.new.assetTypeGeneral") },
-                  { value: "vehicle", label: t("fixedAssets.new.assetTypeVehicle") },
-                ]}
+                onChange={setAssetType}
+                options={assetTypeOptions}
+                loading={!assetTypes.length}
+                onCreateNew={setQuickAddAssetTypeQuery}
+                createLabel={t("quickAdd.addFixedAssetType")}
               />
             </label>
-            {assetType === "vehicle" && (
+            {requiresPlateNumber && (
               <label className="block text-sm">
                 <span className="mb-1.5 block font-medium text-zinc-700">{t("fixedAssets.new.plateNumber")} *</span>
                 <input required value={plateNumber} onChange={(e) => setPlateNumber(e.target.value)} className={inputClass} />
@@ -320,6 +330,17 @@ function NewFixedAssetPageInner() {
           </button>
         </div>
       </form>
+
+      {quickAddAssetTypeQuery !== null && (
+        <QuickAddFixedAssetTypeModal
+          initialName={quickAddAssetTypeQuery}
+          onClose={() => setQuickAddAssetTypeQuery(null)}
+          onCreated={(created) => {
+            setAssetTypes((prev) => [...prev, created]);
+            setAssetType(created.name);
+          }}
+        />
+      )}
     </div>
   );
 }

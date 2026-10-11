@@ -20,6 +20,8 @@ import { dictExpenses } from "./i18n/dict.expenses";
 import { dictPurchases } from "./i18n/dict.purchases";
 import { dictSales } from "./i18n/dict.sales";
 import { dictAuditAndValidation } from "./i18n/dict.auditAndValidation";
+import { dictQuickAdd } from "./i18n/dict.quickAdd";
+import { dictDocumentSettings } from "./i18n/dict.documentSettings";
 
 export type Lang = "id" | "en";
 
@@ -47,6 +49,8 @@ const dict: Record<string, Record<Lang, string>> = {
   ...dictPurchases,
   ...dictSales,
   ...dictAuditAndValidation,
+  ...dictQuickAdd,
+  ...dictDocumentSettings,
 
   // Sidebar sections
   "section.utama": { id: "Utama", en: "Main" },
@@ -79,6 +83,7 @@ const dict: Record<string, Record<Lang, string>> = {
   "nav.generalLedger": { id: "General Ledger", en: "General Ledger" },
   "nav.labaRugi": { id: "Laba Rugi", en: "Profit & Loss" },
   "nav.neraca": { id: "Neraca", en: "Balance Sheet" },
+  "nav.perubahanModal": { id: "Perubahan Modal", en: "Changes in Equity" },
   "nav.arusKas": { id: "Arus Kas", en: "Cash Flow" },
   "nav.piutangJatuhTempo": { id: "Piutang Jatuh Tempo", en: "Aged Receivables" },
   "nav.profitabilitasKendaraan": { id: "Profitabilitas Kendaraan", en: "Vehicle Profitability" },
@@ -98,6 +103,26 @@ const dict: Record<string, Record<Lang, string>> = {
   "common.openMenu": { id: "Buka menu", en: "Open menu" },
   "common.closeMenu": { id: "Tutup menu", en: "Close menu" },
   "common.loading": { id: "Memuat...", en: "Loading..." },
+  "common.exportExcel": { id: "Export Excel", en: "Export Excel" },
+  "common.exporting": { id: "Mengunduh...", en: "Downloading..." },
+  "common.exportError": { id: "Gagal mengunduh file", en: "Failed to download file" },
+
+  "periodPicker.month": { id: "Bulan", en: "Month" },
+  "periodPicker.quarter": { id: "Kuartal", en: "Quarter" },
+  "periodPicker.year": { id: "Tahun", en: "Year" },
+  "periodPicker.custom": { id: "Custom", en: "Custom" },
+  "periodPicker.from": { id: "Dari", en: "From" },
+  "periodPicker.to": { id: "Sampai", en: "To" },
+  "periodPicker.apply": { id: "Terapkan", en: "Apply" },
+  "periodPicker.previous": { id: "Periode sebelumnya", en: "Previous period" },
+  "periodPicker.next": { id: "Periode berikutnya", en: "Next period" },
+
+  "comparisonPicker.none": { id: "Tanpa Perbandingan", en: "No Comparison" },
+  "comparisonPicker.previous": { id: "Periode Sebelumnya", en: "Previous Period" },
+  "comparisonPicker.previousShort": { id: "Perbandingan", en: "Comparison" },
+  "comparisonPicker.periods": { id: "periode", en: "periods" },
+  "comparisonPicker.lastYear": { id: "Periode Sama Tahun Lalu", en: "Same Period Last Year" },
+  "comparisonPicker.lastYearShort": { id: "vs Tahun Lalu", en: "vs Last Year" },
   "common.accountingSystem": { id: "SISTEM AKUNTANSI", en: "ACCOUNTING SYSTEM" },
   "common.accountingSystemInternal": { id: "SISTEM AKUNTANSI INTERNAL", en: "INTERNAL ACCOUNTING SYSTEM" },
 

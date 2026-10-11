@@ -18,6 +18,8 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   "produk.subTabApproval": { id: "Membutuhkan persetujuan", en: "Needs Approval" },
 
   "produk.adjustments.empty": { id: "Belum ada penyesuaian stok.", en: "No stock adjustments yet." },
+  "produk.itemLabel": { id: "produk", en: "products" },
+  "produk.adjustments.itemLabel": { id: "penyesuaian", en: "adjustments" },
   "produk.adjustments.add": { id: "Tambah penyesuaian stok", en: "Add stock adjustment" },
   "produk.adjustments.colNumber": { id: "No. transaksi", en: "Transaction no." },
   "produk.adjustments.colDate": { id: "Tanggal", en: "Date" },
@@ -78,6 +80,11 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   "produk.typeJasa": { id: "Jasa", en: "Service" },
   "produk.active": { id: "Aktif", en: "Active" },
   "produk.archived": { id: "Diarsipkan", en: "Archived" },
+  "produk.detail.errorLoading": { id: "Gagal memuat produk", en: "Failed to load product" },
+  "produk.detail.archive": { id: "Arsipkan", en: "Archive" },
+  "produk.detail.unarchive": { id: "Aktifkan Kembali", en: "Reactivate" },
+  "produk.detail.errorArchive": { id: "Gagal mengubah status produk", en: "Failed to change product status" },
+  "produk.detail.bundleComponentsTitle": { id: "Komponen Bundle", en: "Bundle Components" },
   "produk.empty": { id: "Belum ada produk.", en: "No products yet." },
 
   "produk.form.title": { id: "Tambah Produk Baru", en: "Add New Product" },
@@ -90,6 +97,7 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   "produk.form.imageUploading": { id: "Mengunggah...", en: "Uploading..." },
   "produk.form.errorUpload": { id: "Gagal mengunggah gambar", en: "Failed to upload image" },
 
+  "produk.form.type": { id: "Barang / Jasa", en: "Goods / Service" },
   "produk.form.productType": { id: "Tipe Produk", en: "Product Type" },
   "produk.typeSingle": { id: "Single", en: "Single" },
   "produk.typeSingleDesc": {
@@ -114,6 +122,10 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   },
   "produk.form.minStockShort": { id: "Batas stok minimum", en: "Minimum stock threshold" },
   "produk.form.inventoryAccount": { id: "Akun persediaan barang default", en: "Default inventory account" },
+  "produk.form.trackingModeTrackDescJasa": {
+    id: "Jasa tidak punya stok fisik, jadi tidak bisa dilacak persediaannya",
+    en: "A service has no physical stock, so it can't be inventory-tracked",
+  },
   "produk.form.trackingModeTrackDescBundle": {
     id: "Sistem akan mencatat nilai persediaan & qty bundle produk beserta komponennya",
     en: "The system will record inventory value & qty for the bundle and its components",
@@ -194,8 +206,10 @@ export const dictProduk: Record<string, Record<"id" | "en", string>> = {
   "produk.warehouse.colPic": { id: "Penanggung jawab", en: "Person in charge" },
   "produk.warehouse.colAddress": { id: "Alamat", en: "Address" },
   "produk.warehouse.empty": { id: "Belum ada gudang.", en: "No warehouses yet." },
+  "produk.warehouse.itemLabel": { id: "gudang", en: "warehouses" },
 
   "produk.warehouse.transfer.empty": { id: "Belum ada transfer gudang.", en: "No warehouse transfers yet." },
+  "produk.warehouse.transfer.itemLabel": { id: "transfer", en: "transfers" },
   "produk.warehouse.transfer.add": { id: "Tambah transfer gudang", en: "Add warehouse transfer" },
   "produk.warehouse.transfer.colNumber": { id: "No. transaksi", en: "Transaction no." },
   "produk.warehouse.transfer.colDate": { id: "Tanggal", en: "Date" },

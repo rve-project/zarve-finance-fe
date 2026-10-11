@@ -2,6 +2,7 @@
 // src/lib/i18n.tsx alongside the other page dictionaries.
 export const dictKasBank: Record<string, Record<"id" | "en", string>> = {
   "kasBank.title": { id: "Kas & Bank", en: "Cash & Bank" },
+  "kasBank.itemLabel": { id: "akun", en: "accounts" },
   "kasBank.subtitle": { id: "Ringkasan saldo kas dan bank bisnis B2B", en: "Cash and bank balance summary for the B2B business" },
   "kasBank.pemasukanMendatang": { id: "Pemasukan 30 hari mendatang", en: "Inflow, next 30 days" },
   "kasBank.pengeluaranMendatang": { id: "Pengeluaran 30 hari mendatang", en: "Outflow, next 30 days" },

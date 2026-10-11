@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Scale, TrendingUp, TrendingDown } from "lucide-react";
+import { Scale, TrendingUp, TrendingDown, Download } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
-import { formatRupiah, defaultReportRange } from "@/lib/format";
+import { formatRupiah, EPOCH, dayBefore } from "@/lib/format";
 import { AccountType, BusinessUnit, TrialBalanceResult } from "@/lib/types";
+import { Period, ComparisonMode, thisMonthPeriod, expandComparison, periodLabel } from "@/lib/periods";
+import { activeAccountsAcrossColumns, buildColumnMaps } from "@/lib/reportColumns";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
-import { DatePicker } from "@/components/ui/DatePicker";
+import { PeriodPicker } from "@/components/ui/PeriodPicker";
+import { ComparisonPicker } from "@/components/ui/ComparisonPicker";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
+import { AmountLink } from "@/components/ui/AmountLink";
 
 // Validated categorical order (see dataviz skill's reference palette) -- the first 5
 // slots of the documented 8-hue sequence, used as-is rather than re-picked by
@@ -35,41 +39,59 @@ function axisTick(v: number) {
   return Math.abs(v) >= 1_000_000 ? `${(v / 1_000_000).toFixed(0)}jt` : String(v);
 }
 
+interface Column {
+  period: Period;
+  data: TrialBalanceResult;
+}
+
 export default function TrialBalancePage() {
   const { t } = useLanguage();
+  const MONTH_LABELS = Array.from({ length: 12 }, (_, i) => t(`date.month${i}`));
   const [unit, setUnit] = useState<BusinessUnit>("b2b");
-  const [range, setRange] = useState(defaultReportRange());
-  const [data, setData] = useState<TrialBalanceResult | null>(null);
+  const [period, setPeriod] = useState<Period>(thisMonthPeriod());
+  const [comparison, setComparison] = useState<ComparisonMode>({ type: "none" });
+  const [columns, setColumns] = useState<Column[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   function load() {
     setLoading(true);
-    api
-      .trialBalanceForUnit(range.from, range.to, unit)
-      .then(setData)
+    const periods = expandComparison(period, comparison);
+    Promise.all(periods.map((p) => api.trialBalanceForUnit(p.from, p.to, unit).then((data) => ({ period: p, data }))))
+      .then(setColumns)
       .catch(() => {})
       .finally(() => setLoading(false));
   }
 
   useEffect(load, [unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeRows = data?.rows.filter((r) => r.initialBalance !== 0 || r.periodDebit !== 0 || r.periodCredit !== 0 || r.endBalance !== 0) ?? [];
-  const totalDebit = activeRows.reduce((sum, r) => sum + r.periodDebit, 0);
-  const totalCredit = activeRows.reduce((sum, r) => sum + r.periodCredit, 0);
+  async function handleExport() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await api.exportTrialBalance(period.from, period.to, unit);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : t("common.exportError"));
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const primary = columns[0]?.data.rows.filter((r) => r.initialBalance !== 0 || r.periodDebit !== 0 || r.periodCredit !== 0 || r.endBalance !== 0) ?? [];
+  const totalDebit = primary.reduce((sum, r) => sum + r.periodDebit, 0);
+  const totalCredit = primary.reduce((sum, r) => sum + r.periodCredit, 0);
+  const isComparing = columns.length > 1;
+  const activeAccounts = activeAccountsAcrossColumns(columns.map((c) => c.data));
+  const columnMaps = buildColumnMaps(columns.map((c) => c.data));
 
   return (
     <div>
       <PageHeader title={t("nav.trialBalance")} subtitle={t("trialBalance.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
 
-      <div className="relative z-40 mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-zinc-200 bg-white p-4">
-        <label className="text-sm">
-          <span className="mb-1 block text-zinc-600">{t("trialBalance.dateFrom")}</span>
-          <DatePicker value={range.from} onChange={(v) => setRange((r) => ({ ...r, from: v }))} />
-        </label>
-        <label className="text-sm">
-          <span className="mb-1 block text-zinc-600">{t("trialBalance.dateTo")}</span>
-          <DatePicker value={range.to} onChange={(v) => setRange((r) => ({ ...r, to: v }))} maxDate={new Date().toISOString().slice(0, 10)} />
-        </label>
+      <div className="relative z-40 mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4">
+        <PeriodPicker value={period} onChange={setPeriod} />
+        <ComparisonPicker value={comparison} onChange={setComparison} />
         <button
           onClick={load}
           disabled={loading}
@@ -77,15 +99,27 @@ export default function TrialBalancePage() {
         >
           {loading ? t("common.loading") : t("trialBalance.show")}
         </button>
+        {columns.length > 0 && (
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="ml-auto flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" />
+            {exporting ? t("common.exporting") : t("common.exportExcel")}
+          </button>
+        )}
       </div>
+
+      {exportError && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{exportError}</p>}
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatTile icon={TrendingUp} iconClass="bg-emerald-50 text-emerald-600" label={t("trialBalance.statTotalDebit")} value={formatRupiah(totalDebit)} />
         <StatTile icon={TrendingDown} iconClass="bg-red-50 text-red-600" label={t("trialBalance.statTotalCredit")} value={formatRupiah(totalCredit)} />
-        <StatTile icon={Scale} iconClass="bg-blue-50 text-blue-600" label={t("trialBalance.statActiveAccounts")} value={activeRows.length.toLocaleString("id-ID")} />
+        <StatTile icon={Scale} iconClass="bg-blue-50 text-blue-600" label={t("trialBalance.statActiveAccounts")} value={primary.length.toLocaleString("id-ID")} />
       </div>
 
-      {activeRows.length > 0 && (
+      {primary.length > 0 && (
         <div className="mb-6 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold text-zinc-700">{t("trialBalance.chartTitle")}</p>
@@ -99,7 +133,7 @@ export default function TrialBalancePage() {
             </div>
           </div>
           {(() => {
-            const top = [...activeRows]
+            const top = [...primary]
               .sort((a, b) => Math.abs(b.endBalance) - Math.abs(a.endBalance))
               .slice(0, 10)
               .map((r) => ({ name: r.account.name, value: r.endBalance, type: r.account.type }))
@@ -129,27 +163,68 @@ export default function TrialBalancePage() {
             <tr className="border-b border-zinc-100 text-left text-zinc-500">
               <th className="px-3 py-2.5 font-medium">{t("trialBalance.colCode")}</th>
               <th className="px-3 py-2.5 font-medium">{t("trialBalance.colAccountName")}</th>
-              <th className="px-3 py-2.5 text-right font-medium">{t("trialBalance.colInitialBalance")}</th>
-              <th className="px-3 py-2.5 text-right font-medium">{t("trialBalance.colDebit")}</th>
-              <th className="px-3 py-2.5 text-right font-medium">{t("trialBalance.colCredit")}</th>
-              <th className="px-3 py-2.5 text-right font-medium">{t("trialBalance.colEndBalance")}</th>
+              {isComparing ? (
+                columns.map((col) => (
+                  <th key={col.period.from + col.period.to} className="px-3 py-2.5 text-right font-medium">
+                    {periodLabel(col.period, MONTH_LABELS)}
+                  </th>
+                ))
+              ) : (
+                <>
+                  <th className="px-3 py-2.5 text-right font-medium">{t("trialBalance.colInitialBalance")}</th>
+                  <th className="px-3 py-2.5 text-right font-medium">{t("trialBalance.colDebit")}</th>
+                  <th className="px-3 py-2.5 text-right font-medium">{t("trialBalance.colCredit")}</th>
+                  <th className="px-3 py-2.5 text-right font-medium">{t("trialBalance.colEndBalance")}</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
-            {activeRows.map((r) => (
-              <tr key={r.account.id} className="border-b border-zinc-50 hover:bg-zinc-50">
-                <td className="px-3 py-2.5 font-mono text-xs text-zinc-500">{r.account.code}</td>
-                <td className="px-3 py-2.5">{r.account.name}</td>
-                <td className="px-3 py-2.5 text-right text-zinc-500">{formatRupiah(r.initialBalance)}</td>
-                <td className="px-3 py-2.5 text-right">{formatRupiah(r.periodDebit)}</td>
-                <td className="px-3 py-2.5 text-right">{formatRupiah(r.periodCredit)}</td>
-                <td className="px-3 py-2.5 text-right font-semibold">{formatRupiah(r.endBalance)}</td>
-              </tr>
-            ))}
-            {!activeRows.length && (
+            {!isComparing &&
+              primary.map((r) => (
+                <tr key={r.account.id} className="border-b border-zinc-50 hover:bg-zinc-50">
+                  <td className="px-3 py-2.5 font-mono text-xs text-zinc-500">{r.account.code}</td>
+                  <td className="px-3 py-2.5">{r.account.name}</td>
+                  <td className="px-3 py-2.5 text-right text-zinc-500">
+                    <AmountLink accountId={r.account.id} from={EPOCH} to={dayBefore(period.from)} unit={unit} value={r.initialBalance} />
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.periodDebit} />
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.periodCredit} />
+                  </td>
+                  <td className="px-3 py-2.5 text-right font-semibold">
+                    <AmountLink accountId={r.account.id} from={EPOCH} to={period.to} unit={unit} value={r.endBalance} />
+                  </td>
+                </tr>
+              ))}
+            {isComparing &&
+              activeAccounts.map((acc) => (
+                <tr key={acc.id} className="border-b border-zinc-50 hover:bg-zinc-50">
+                  <td className="px-3 py-2.5 font-mono text-xs text-zinc-500">{acc.code}</td>
+                  <td className="px-3 py-2.5">{acc.name}</td>
+                  {columns.map((col, i) => {
+                    const row = columnMaps[i].get(acc.id);
+                    return (
+                      <td key={col.period.from + col.period.to} className="px-3 py-2.5 text-right font-semibold">
+                        {row ? <AmountLink accountId={acc.id} from={EPOCH} to={col.period.to} unit={unit} value={row.endBalance} /> : formatRupiah(0)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            {!loading && !(isComparing ? activeAccounts.length : primary.length) && (
               <tr>
-                <td colSpan={6} className="px-3 py-10 text-center text-sm text-zinc-400">
-                  {loading ? t("common.loading") : t("trialBalance.emptyState")}
+                <td colSpan={isComparing ? 2 + columns.length : 6} className="px-3 py-10 text-center text-sm text-zinc-400">
+                  {t("trialBalance.emptyState")}
+                </td>
+              </tr>
+            )}
+            {loading && (
+              <tr>
+                <td colSpan={isComparing ? 2 + columns.length : 6} className="px-3 py-10 text-center text-sm text-zinc-400">
+                  {t("common.loading")}
                 </td>
               </tr>
             )}

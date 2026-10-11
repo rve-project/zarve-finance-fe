@@ -7,6 +7,7 @@ import {
   ActivityLogPage,
   Citizenship,
   Contact,
+  ContactInput,
   ContactType,
   ActiveFixedAsset,
   AgedReceivablesResult,
@@ -20,11 +21,15 @@ import {
   CashBankSummary,
   UnreconciledCashBankLinePage,
   CashFlowResult,
+  EquityChangesResult,
   DepreciationScheduleResult,
+  RunDepreciationResult,
+  DepreciationBoardResult,
   DisposedFixedAsset,
   DisposeAssetResult,
   FixedAssetRevaluation,
   FixedAssetType,
+  FixedAssetTypeOption,
   RevalueAssetResult,
   JournalValidationResult,
   DriverRevenueRecap,
@@ -62,6 +67,7 @@ import {
   Payment,
   PendingFixedAsset,
   Product,
+  ProductDetail,
   ProductCategory,
   ProductListResult,
   ProfitAndLossResult,
@@ -73,6 +79,8 @@ import {
   StockAdjustmentType,
   TaxCode,
   Bank,
+  PaymentTerm,
+  DocumentSettings,
   WarehouseTransfer,
   TrialBalanceResult,
   UnreconciledPaymentPage,
@@ -173,12 +181,12 @@ const postForUnit = <T>(path: string, data: unknown, unit: "zarve" | "b2b") =>
 const put = <T>(path: string, data: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(data) });
 const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 
-async function downloadFile(path: string, filename: string) {
+async function downloadFile(path: string, filename: string, unit?: "zarve" | "b2b") {
   const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      "X-Business-Unit": getBusinessUnit(),
+      "X-Business-Unit": unit ?? getBusinessUnit(),
     },
   });
   if (!res.ok) {
@@ -252,12 +260,32 @@ export const api = {
     put<AccountCategory>(`/account-categories/${id}`, data),
 
   taxes: (includeArchived = false) => get<TaxCode[]>(`/taxes${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
-  createTax: (data: { name: string; rate: number }) => post<TaxCode>("/taxes", data),
-  updateTax: (id: number, data: Partial<Pick<TaxCode, "name" | "rate" | "isActive">>) => put<TaxCode>(`/taxes/${id}`, data),
+  createTax: (
+    data:
+      | { name: string; rate: number; accountId?: number }
+      | { name: string; isCompound: true; components: { taxId: number; sign: "add" | "subtract" }[] }
+  ) => post<TaxCode>("/taxes", data),
+  updateTax: (
+    id: number,
+    data: Partial<Pick<TaxCode, "name" | "rate" | "accountId" | "isActive">> & {
+      isCompound?: boolean;
+      components?: { taxId: number; sign: "add" | "subtract" }[];
+    }
+  ) => put<TaxCode>(`/taxes/${id}`, data),
 
   banks: (includeArchived = false) => get<Bank[]>(`/banks${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
   createBank: (data: { name: string }) => post<Bank>("/banks", data),
   updateBank: (id: number, data: Partial<Pick<Bank, "name" | "isActive">>) => put<Bank>(`/banks/${id}`, data),
+
+  paymentTerms: (includeArchived = false) => get<PaymentTerm[]>(`/payment-terms${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
+  createPaymentTerm: (data: { name: string; days?: number | null }) => post<PaymentTerm>("/payment-terms", data),
+  updatePaymentTerm: (id: number, data: Partial<Pick<PaymentTerm, "name" | "days" | "isActive">>) => put<PaymentTerm>(`/payment-terms/${id}`, data),
+
+  fixedAssetTypes: (includeArchived = false) =>
+    get<FixedAssetTypeOption[]>(`/fixed-asset-types${qs({ includeArchived: includeArchived ? "true" : undefined })}`),
+  createFixedAssetType: (data: { name: string; requiresPlateNumber?: boolean }) => post<FixedAssetTypeOption>("/fixed-asset-types", data),
+  updateFixedAssetType: (id: number, data: Partial<Pick<FixedAssetTypeOption, "name" | "requiresPlateNumber" | "isActive">>) =>
+    put<FixedAssetTypeOption>(`/fixed-asset-types/${id}`, data),
 
   partners: (params: { q?: string; page?: number; limit?: number; type?: "customer" | "vendor" }) =>
     get<PartnerPage>(`/partners${qs({ q: params.q, page: params.page, limit: params.limit, type: params.type })}`),
@@ -294,18 +322,32 @@ export const api = {
   trialBalance: (from: string, to: string) => get<TrialBalanceResult>(`/reports/trial-balance${qs({ from, to })}`),
   trialBalanceForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
     getForUnit<TrialBalanceResult>(`/reports/trial-balance${qs({ from, to })}`, unit),
+  exportTrialBalance: (from: string, to: string, unit: "zarve" | "b2b") =>
+    downloadFile(`/reports/trial-balance/export${qs({ from, to })}`, `Trial Balance ${from} - ${to}.xlsx`, unit),
   generalLedger: (accountId: number, from: string, to: string, page = 1, limit = 50) =>
     get<GeneralLedgerResult>(`/reports/general-ledger${qs({ accountId, from, to, page, limit })}`),
   generalLedgerForUnit: (accountId: number, from: string, to: string, page = 1, limit = 50, unit: "zarve" | "b2b" = "zarve") =>
     getForUnit<GeneralLedgerResult>(`/reports/general-ledger${qs({ accountId, from, to, page, limit })}`, unit),
+  exportGeneralLedger: (accountId: number, from: string, to: string, unit: "zarve" | "b2b") =>
+    downloadFile(`/reports/general-ledger/export${qs({ accountId, from, to })}`, `General Ledger ${from} - ${to}.xlsx`, unit),
   profitAndLoss: (from: string, to: string) => get<ProfitAndLossResult>(`/reports/profit-loss${qs({ from, to })}`),
   profitAndLossForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
     getForUnit<ProfitAndLossResult>(`/reports/profit-loss${qs({ from, to })}`, unit),
+  exportProfitAndLoss: (from: string, to: string, unit: "zarve" | "b2b") =>
+    downloadFile(`/reports/profit-loss/export${qs({ from, to })}`, `Laba Rugi ${from} - ${to}.xlsx`, unit),
   balanceSheet: (asOf: string) => get<BalanceSheetResult>(`/reports/balance-sheet${qs({ asOf })}`),
   balanceSheetForUnit: (asOf: string, unit: "zarve" | "b2b") => getForUnit<BalanceSheetResult>(`/reports/balance-sheet${qs({ asOf })}`, unit),
+  exportBalanceSheet: (asOf: string, unit: "zarve" | "b2b") =>
+    downloadFile(`/reports/balance-sheet/export${qs({ asOf })}`, `Neraca ${asOf}.xlsx`, unit),
+  equityChangesForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
+    getForUnit<EquityChangesResult>(`/reports/equity-changes${qs({ from, to })}`, unit),
+  exportEquityChanges: (from: string, to: string, unit: "zarve" | "b2b") =>
+    downloadFile(`/reports/equity-changes/export${qs({ from, to })}`, `Laporan Perubahan Modal ${from} - ${to}.xlsx`, unit),
   cashFlow: (from: string, to: string) => get<CashFlowResult>(`/reports/cash-flow${qs({ from, to })}`),
   cashFlowForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
     getForUnit<CashFlowResult>(`/reports/cash-flow${qs({ from, to })}`, unit),
+  exportCashFlow: (from: string, to: string, unit: "zarve" | "b2b") =>
+    downloadFile(`/reports/cash-flow/export${qs({ from, to })}`, `Arus Kas ${from} - ${to}.xlsx`, unit),
 
   revenueRecap: (startDate: string, endDate: string) =>
     get<RevenueRecap>(`/revenue-recap${qs({ startDate, endDate })}`),
@@ -409,6 +451,8 @@ export const api = {
   fixedAssetsDisposed: () => get<DisposedFixedAsset[]>("/fixed-assets/disposed"),
   fixedAssetsDepreciationSchedule: (month: string) =>
     get<DepreciationScheduleResult>(`/fixed-assets/depreciation-schedule${qs({ month })}`),
+  runFixedAssetDepreciation: (throughMonth: string) =>
+    post<RunDepreciationResult>(`/fixed-assets/run-depreciation${qs({ throughMonth })}`, undefined),
   createFixedAsset: (data: {
     name: string;
     assetNumber?: string;
@@ -433,6 +477,7 @@ export const api = {
   revalueFixedAsset: (id: number, data: { revaluationDate: string; newValue: number; adjustmentAccountId: number; notes?: string }) =>
     post<RevalueAssetResult>(`/fixed-assets/${id}/revalue`, data),
   fixedAssetRevaluations: (id: number) => get<FixedAssetRevaluation[]>(`/fixed-assets/${id}/revaluations`),
+  fixedAssetDepreciationBoard: (id: number) => get<DepreciationBoardResult>(`/fixed-assets/${id}/depreciation-board`),
 
   orders: (type: OrderType, params: { from?: string; to?: string; search?: string } = {}) =>
     get<OrdersByStatus>(`/orders${qs({ type, from: params.from, to: params.to, search: params.search })}`),
@@ -443,6 +488,7 @@ export const api = {
   products: (params: { search?: string; includeArchived?: boolean } = {}) =>
     get<ProductListResult>(`/products${qs({ search: params.search, includeArchived: params.includeArchived ? "true" : undefined })}`),
   productWarehouseStock: (warehouseId?: number) => get<{ productId: number; qty: number }[]>(`/products/warehouse-stock${qs({ warehouseId })}`),
+  getProduct: (id: number) => get<ProductDetail>(`/products/${id}`),
   createProduct: (data: {
     type: "barang" | "jasa";
     name: string;
@@ -476,6 +522,14 @@ export const api = {
     const formData = new FormData();
     formData.append("image", file);
     return request<{ url: string }>("/products/upload-image", { method: "POST", body: formData });
+  },
+
+  documentSettings: () => get<DocumentSettings>("/document-settings"),
+  updateDocumentSettings: (data: DocumentSettings) => put<DocumentSettings>("/document-settings", data),
+  uploadDocumentLogo: (file: File) => {
+    const formData = new FormData();
+    formData.append("logo", file);
+    return request<{ url: string }>("/document-settings/upload-logo", { method: "POST", body: formData });
   },
 
   productCategories: (includeArchived = false) =>
@@ -515,31 +569,9 @@ export const api = {
 
   contacts: (params: { type?: ContactType; search?: string; includeArchived?: boolean } = {}) =>
     get<Contact[]>(`/contacts${qs({ type: params.type, search: params.search, includeArchived: params.includeArchived ? "true" : undefined })}`),
-  createContact: (data: {
-    types: ContactType[];
-    name: string;
-    salutation?: string;
-    firstName?: string;
-    middleName?: string;
-    lastName?: string;
-    companyName?: string;
-    address?: string;
-    shippingAddress?: string;
-    email?: string;
-    mobilePhone?: string;
-    phone?: string;
-    fax?: string;
-    citizenship?: Citizenship;
-    npwp?: string;
-    idType?: string;
-    idNumber?: string;
-    nitku?: string;
-    paymentTerm?: string;
-    receivableAccountId?: number;
-    payableAccountId?: number;
-    notes?: string;
-    bankAccounts?: { bankName?: string; branch?: string; accountHolder?: string; accountNumber?: string }[];
-  }) => post<Contact>("/contacts", data),
+  getContact: (id: number) => get<Contact>(`/contacts/${id}`),
+  createContact: (data: ContactInput) => post<Contact>("/contacts", data),
+  updateContact: (id: number, data: ContactInput) => put<Contact>(`/contacts/${id}`, data),
 
   expenses: () => get<Expense[]>("/expenses"),
   expensesForUnit: (unit: "zarve" | "b2b") => getForUnit<Expense[]>("/expenses", unit),

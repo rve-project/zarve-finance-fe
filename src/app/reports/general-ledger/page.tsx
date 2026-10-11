@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { TrendingUp, TrendingDown, Landmark } from "lucide-react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { TrendingUp, TrendingDown, Landmark, Download } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
@@ -19,19 +20,43 @@ const BLUE = "#2a78d6";
 
 const LIMIT = 50;
 
-export default function GeneralLedgerPage() {
+function GeneralLedgerPageInner() {
   const { t } = useLanguage();
-  const [unit, setUnit] = useState<BusinessUnit>("b2b");
+  const searchParams = useSearchParams();
+  // Drill-down from another report (see AmountLink) lands here with these pre-filled --
+  // skips the "most active account" auto-pick below so it opens showing exactly the
+  // account/range that was clicked, not something else.
+  const linkedAccountId = searchParams.get("accountId") ? Number(searchParams.get("accountId")) : null;
+  const linkedFrom = searchParams.get("from");
+  const linkedTo = searchParams.get("to");
+  const linkedUnit = searchParams.get("unit") as BusinessUnit | null;
+  // Captured once per mount (useRef's initializer argument is only honored on the very
+  // first render) -- NOT a "have I run yet" flag, which would break under React Strict
+  // Mode's dev-only double-invoke of this same effect (the first invocation's mutation
+  // would already be visible to the second, synchronous one, so it'd fall through to
+  // the reset branch below and immediately undo the correct skip).
+  const initialUnitRef = useRef<BusinessUnit>(linkedUnit === "zarve" || linkedUnit === "b2b" ? linkedUnit : "b2b");
+
+  const [unit, setUnit] = useState<BusinessUnit>(initialUnitRef.current);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [accountId, setAccountId] = useState<number | null>(null);
-  const [range, setRange] = useState(defaultReportRange());
+  const [accountId, setAccountId] = useState<number | null>(linkedAccountId);
+  const [range, setRange] = useState(linkedFrom && linkedTo ? { from: linkedFrom, to: linkedTo } : defaultReportRange());
   const [page, setPage] = useState(1);
   const [data, setData] = useState<GeneralLedgerResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   useEffect(() => {
-    setAccountId(null);
     setData(null);
+    // Still showing the business unit the drill-down link specified -- skip the
+    // auto-pick so the account/range it asked for stays put. Once the user actually
+    // toggles business unit away, this is false and the normal auto-pick takes over.
+    if (linkedAccountId && unit === initialUnitRef.current) {
+      api.accountsForUnit(unit).then(setAccounts);
+      return;
+    }
+    setAccountId(null);
     const { from, to } = defaultReportRange();
     Promise.all([api.accountsForUnit(unit), api.trialBalanceForUnit(from, to, unit)]).then(([accountList, tb]) => {
       setAccounts(accountList);
@@ -43,7 +68,7 @@ export default function GeneralLedgerPage() {
       const defaultId = mostActive && mostActive.periodDebit + mostActive.periodCredit > 0 ? mostActive.account.id : accountList[0].id;
       setAccountId(defaultId);
     });
-  }, [unit]);
+  }, [unit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function load(p = 1) {
     if (!accountId) return;
@@ -63,6 +88,19 @@ export default function GeneralLedgerPage() {
   }, [accountId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedAccount = accounts.find((a) => a.id === accountId);
+
+  async function handleExport() {
+    if (!accountId) return;
+    setExporting(true);
+    setExportError(null);
+    try {
+      await api.exportGeneralLedger(accountId, range.from, range.to, unit);
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : t("common.exportError"));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div>
@@ -95,7 +133,19 @@ export default function GeneralLedgerPage() {
         >
           {loading ? t("common.loading") : t("generalLedger.showButton")}
         </button>
+        {data && (
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="ml-auto flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" />
+            {exporting ? t("common.exporting") : t("common.exportExcel")}
+          </button>
+        )}
       </div>
+
+      {exportError && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{exportError}</p>}
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatTile icon={TrendingUp} iconClass="bg-emerald-50 text-emerald-600" label={t("generalLedger.totalDebit")} value={formatRupiah(data?.totalDebit ?? 0)} />
@@ -173,5 +223,13 @@ export default function GeneralLedgerPage() {
 
       {data && <Pagination page={page} limit={LIMIT} total={data.total} onChange={load} loading={loading} itemLabel={t("generalLedger.itemLabel")} />}
     </div>
+  );
+}
+
+export default function GeneralLedgerPage() {
+  return (
+    <Suspense fallback={null}>
+      <GeneralLedgerPageInner />
+    </Suspense>
   );
 }

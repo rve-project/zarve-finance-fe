@@ -5,10 +5,22 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
-import { Account, ActiveFixedAsset, DepreciationScheduleRow, DisposedFixedAsset, FixedAssetRevaluation, PendingFixedAsset } from "@/lib/types";
+import {
+  Account,
+  ActiveFixedAsset,
+  DepreciationBoardResult,
+  DepreciationScheduleRow,
+  DisposedFixedAsset,
+  FixedAssetRevaluation,
+  PendingFixedAsset,
+  RunDepreciationResult,
+} from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { MonthPicker } from "@/components/ui/MonthPicker";
+import { Pagination } from "@/components/ui/Pagination";
+
+const LIMIT = 20;
 
 type Tab = "pending" | "active" | "disposed" | "depreciation";
 
@@ -36,10 +48,14 @@ function EmptyAssetHint({ heading }: { heading: string }) {
 function PendingTab() {
   const { t } = useLanguage();
   const [rows, setRows] = useState<PendingFixedAsset[] | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     api.fixedAssetsPending().then(setRows).catch(() => setRows([]));
   }, []);
+
+  const totalItems = rows?.length ?? 0;
+  const pageRows = rows?.slice((page - 1) * LIMIT, page * LIMIT) ?? null;
 
   return (
     <div>
@@ -56,7 +72,7 @@ function PendingTab() {
             </tr>
           </thead>
           <tbody>
-            {rows?.map((r) => (
+            {pageRows?.map((r) => (
               <tr key={r.journalLineId} className="border-b border-zinc-50">
                 <td className="px-4 py-2.5">{formatDate(r.date)}</td>
                 <td className="px-4 py-2.5">
@@ -86,6 +102,8 @@ function PendingTab() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={totalItems} onChange={setPage} itemLabel={t("fixedAssets.pending.itemLabel")} />
     </div>
   );
 }
@@ -297,18 +315,103 @@ function RevaluationHistory({ assetId }: { assetId: number }) {
   );
 }
 
+const BOARD_LIMIT = 12;
+
+/** Full month-by-month schedule for one asset's whole useful life -- recomputed live
+ * from the asset's current parameters every time it's opened, so editing the asset
+ * (cost, useful life, opening accumulated depreciation) immediately changes every
+ * not-yet-posted row here, no "regenerate" step needed. Only rows already in
+ * fixed_asset_depreciation_postings (the "Sudah Diposting" ones) are a fixed, durable
+ * fact -- everything else is just today's math shown ahead of time, same idea as
+ * Odoo's draft depreciation entries, minus an actual draft journal_entries row. */
+function DepreciationBoard({ assetId }: { assetId: number }) {
+  const { t } = useLanguage();
+  const [board, setBoard] = useState<DepreciationBoardResult | null>(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    api.fixedAssetDepreciationBoard(assetId).then(setBoard).catch(() => setBoard({ assetId, assetName: "", assetNumber: "", rows: [] }));
+  }, [assetId]);
+
+  if (!board) {
+    return (
+      <tr className="border-b border-zinc-50 bg-zinc-50/60">
+        <td colSpan={6} className="px-4 py-3 text-xs text-zinc-400">
+          {t("common.loading")}
+        </td>
+      </tr>
+    );
+  }
+
+  const pageRows = board.rows.slice((page - 1) * BOARD_LIMIT, page * BOARD_LIMIT);
+
+  return (
+    <tr className="border-b border-zinc-50 bg-zinc-50/60">
+      <td colSpan={6} className="px-4 py-3">
+        <p className="mb-2 text-xs font-semibold text-zinc-600">{t("fixedAssets.board.heading")}</p>
+        {!board.rows.length ? (
+          <p className="text-xs text-zinc-400">{t("fixedAssets.board.empty")}</p>
+        ) : (
+          <>
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-zinc-500">
+                  <th className="pb-1.5 font-medium">{t("fixedAssets.board.colPeriod")}</th>
+                  <th className="pb-1.5 text-right font-medium">{t("fixedAssets.board.colAmount")}</th>
+                  <th className="pb-1.5 text-right font-medium">{t("fixedAssets.board.colCumulative")}</th>
+                  <th className="pb-1.5 text-right font-medium">{t("fixedAssets.board.colRemaining")}</th>
+                  <th className="pb-1.5 font-medium">{t("fixedAssets.board.colStatus")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((r) => (
+                  <tr key={r.period} className="border-t border-zinc-100">
+                    <td className="py-1.5 text-zinc-700">{r.period}</td>
+                    <td className="py-1.5 text-right text-zinc-700">{formatRupiah(r.amount)}</td>
+                    <td className="py-1.5 text-right text-zinc-500">{formatRupiah(r.cumulativeDepreciation)}</td>
+                    <td className="py-1.5 text-right text-zinc-500">{formatRupiah(r.remainingBookValue)}</td>
+                    <td className="py-1.5">
+                      {r.posted ? (
+                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+                          {t("fixedAssets.depreciation.posted")}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                          {t("fixedAssets.depreciation.notPosted")}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-2">
+              <Pagination page={page} limit={BOARD_LIMIT} total={board.rows.length} onChange={setPage} itemLabel={t("fixedAssets.board.itemLabel")} />
+            </div>
+          </>
+        )}
+      </td>
+    </tr>
+  );
+}
+
 function ActiveTab() {
   const { t } = useLanguage();
   const [rows, setRows] = useState<ActiveFixedAsset[] | null>(null);
   const [disposingId, setDisposingId] = useState<number | null>(null);
   const [revaluingId, setRevaluingId] = useState<number | null>(null);
   const [historyId, setHistoryId] = useState<number | null>(null);
+  const [boardId, setBoardId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
 
   function load() {
     api.fixedAssetsActive().then(setRows).catch(() => setRows([]));
   }
 
   useEffect(load, []);
+
+  const totalItems = rows?.length ?? 0;
+  const pageRows = rows?.slice((page - 1) * LIMIT, page * LIMIT) ?? null;
 
   return (
     <div>
@@ -326,18 +429,19 @@ function ActiveTab() {
             </tr>
           </thead>
           <tbody>
-            {rows?.map((a) => (
+            {pageRows?.map((a) => (
               <Fragment key={a.id}>
                 <tr className="border-b border-zinc-50">
                   <td className="px-4 py-2.5">{formatDate(a.acquisitionDate)}</td>
                   <td className="px-4 py-2.5">
                     <span className="font-medium text-zinc-800">{a.name}</span>{" "}
                     <span className="font-mono text-xs text-zinc-400">#{a.assetNumber}</span>
-                    {a.assetType === "vehicle" && (
+                    {a.assetType !== "Umum" && (
                       <>
                         {" "}
                         <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-600">
-                          {t("fixedAssets.assetTypeVehicleBadge")} · {a.plateNumber}
+                          {a.assetType}
+                          {a.plateNumber ? ` · ${a.plateNumber}` : ""}
                         </span>
                       </>
                     )}
@@ -346,6 +450,13 @@ function ActiveTab() {
                   <td className="px-4 py-2.5 text-right">{formatRupiah(a.acquisitionCost)}</td>
                   <td className="px-4 py-2.5 text-right font-medium">{formatRupiah(a.bookValue)}</td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setBoardId(boardId === a.id ? null : a.id)}
+                      className="mr-3 text-xs font-semibold text-violet-600 hover:underline"
+                    >
+                      {t("fixedAssets.board.toggle")}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setHistoryId(historyId === a.id ? null : a.id)}
@@ -369,6 +480,7 @@ function ActiveTab() {
                     </button>
                   </td>
                 </tr>
+                {boardId === a.id && <DepreciationBoard assetId={a.id} />}
                 {historyId === a.id && <RevaluationHistory assetId={a.id} />}
                 {revaluingId === a.id && (
                   <RevalueForm
@@ -402,6 +514,8 @@ function ActiveTab() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={totalItems} onChange={setPage} itemLabel={t("fixedAssets.active.itemLabel")} />
     </div>
   );
 }
@@ -409,10 +523,14 @@ function ActiveTab() {
 function DisposedTab() {
   const { t } = useLanguage();
   const [rows, setRows] = useState<DisposedFixedAsset[] | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     api.fixedAssetsDisposed().then(setRows).catch(() => setRows([]));
   }, []);
+
+  const totalItems = rows?.length ?? 0;
+  const pageRows = rows?.slice((page - 1) * LIMIT, page * LIMIT) ?? null;
 
   return (
     <div>
@@ -429,17 +547,18 @@ function DisposedTab() {
             </tr>
           </thead>
           <tbody>
-            {rows?.map((a) => (
+            {pageRows?.map((a) => (
               <tr key={a.id} className="border-b border-zinc-50">
                 <td className="px-4 py-2.5">{a.disposalDate ? formatDate(a.disposalDate) : "-"}</td>
                 <td className="px-4 py-2.5">
                   <span className="font-medium text-zinc-800">{a.name}</span>{" "}
                   <span className="font-mono text-xs text-zinc-400">#{a.assetNumber}</span>
-                  {a.assetType === "vehicle" && (
+                  {a.assetType !== "Umum" && (
                     <>
                       {" "}
                       <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-600">
-                        {t("fixedAssets.assetTypeVehicleBadge")} · {a.plateNumber}
+                        {a.assetType}
+                        {a.plateNumber ? ` · ${a.plateNumber}` : ""}
                       </span>
                     </>
                   )}
@@ -462,6 +581,8 @@ function DisposedTab() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={totalItems} onChange={setPage} itemLabel={t("fixedAssets.disposed.itemLabel")} />
     </div>
   );
 }
@@ -470,18 +591,59 @@ function DepreciationTab() {
   const { t } = useLanguage();
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [rows, setRows] = useState<DepreciationScheduleRow[] | null>(null);
+  const [running, setRunning] = useState(false);
+  const [runResult, setRunResult] = useState<RunDepreciationResult | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     setRows(null);
     api.fixedAssetsDepreciationSchedule(month).then((res) => setRows(res.data)).catch(() => setRows([]));
-  }, [month]);
+  }
+
+  useEffect(load, [month]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleRun() {
+    setRunning(true);
+    setRunError(null);
+    setRunResult(null);
+    try {
+      const result = await api.runFixedAssetDepreciation(month);
+      setRunResult(result);
+      load();
+    } catch (err) {
+      setRunError(err instanceof Error ? err.message : t("fixedAssets.depreciation.runError"));
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  const duePending = rows?.some((r) => !r.posted) ?? false;
 
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-zinc-900">{t("fixedAssets.tabDepreciation")}</h2>
-        <MonthPicker value={month} onChange={setMonth} />
+        <div className="flex items-center gap-2">
+          <MonthPicker value={month} onChange={setMonth} />
+          <button
+            type="button"
+            onClick={handleRun}
+            disabled={running || !duePending}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {running ? t("fixedAssets.depreciation.running") : t("fixedAssets.depreciation.runButton")}
+          </button>
+        </div>
       </div>
+
+      {runError && <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{runError}</p>}
+      {runResult && (
+        <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          {t("fixedAssets.depreciation.runSuccess").replace("{count}", String(runResult.posted.length))}
+          {runResult.skipped.length > 0 && ` -- ${runResult.skipped.length} ${t("fixedAssets.depreciation.runSkipped")}`}
+        </p>
+      )}
+
       <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
         <table className="w-full text-sm">
           <thead>
@@ -491,6 +653,7 @@ function DepreciationTab() {
               <th className="px-4 py-3 text-right font-medium">{t("fixedAssets.depreciation.colValue")}</th>
               <th className="px-4 py-3 font-medium">{t("fixedAssets.depreciation.colMethod")}</th>
               <th className="px-4 py-3 text-right font-medium">{t("fixedAssets.depreciation.colAmount")}</th>
+              <th className="px-4 py-3 font-medium">{t("fixedAssets.depreciation.colStatus")}</th>
             </tr>
           </thead>
           <tbody>
@@ -504,11 +667,22 @@ function DepreciationTab() {
                 <td className="px-4 py-2.5 text-right">{formatRupiah(r.value)}</td>
                 <td className="px-4 py-2.5">{t("fixedAssets.depreciation.methodStraightLine")}</td>
                 <td className="px-4 py-2.5 text-right font-medium">{formatRupiah(r.amount)}</td>
+                <td className="px-4 py-2.5">
+                  {r.posted ? (
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
+                      {t("fixedAssets.depreciation.posted")}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600">
+                      {t("fixedAssets.depreciation.notPosted")}
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
             {rows && !rows.length && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center">
+                <td colSpan={6} className="px-4 py-8 text-center">
                   <EmptyAssetHint heading={t("fixedAssets.depreciation.empty")} />
                 </td>
               </tr>

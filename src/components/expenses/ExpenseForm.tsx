@@ -9,6 +9,7 @@ import { formatRupiah } from "@/lib/format";
 import { Account, Contact, CreateExpenseInput, ExpenseDetail, TaxCode } from "@/lib/types";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { QuickAddContactModal } from "@/components/ui/QuickAddContactModal";
 
 interface LineDraft {
   accountId: string;
@@ -52,6 +53,8 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
   const [taxes, setTaxes] = useState<TaxCode[]>([]);
 
   const [bankAccountId, setBankAccountId] = useState(initial?.bankAccountId ? String(initial.bankAccountId) : "");
+  const [numberMode, setNumberMode] = useState<"auto" | "custom">("auto");
+  const [number, setNumber] = useState("");
   const [payLater, setPayLater] = useState(initial?.payLater ?? false);
   const [contactId, setContactId] = useState(initial?.contactId ? String(initial.contactId) : "");
   const [date, setDate] = useState(initial?.expenseDate ?? today());
@@ -84,6 +87,9 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Non-null (even "") while the quick-add-vendor modal is open, pre-filled with whatever
+  // the user had already typed into the Penerima search box.
+  const [quickAddContactQuery, setQuickAddContactQuery] = useState<string | null>(null);
 
   useEffect(() => {
     api.accounts(undefined, "cash_bank").then(setBankAccounts).catch(() => {});
@@ -150,6 +156,7 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
     setSubmitting(true);
     try {
       await onSubmit({
+        number: numberMode === "custom" ? number.trim() || undefined : undefined,
         contactId: contactId ? Number(contactId) : undefined,
         expenseDate: date,
         paymentMethod: paymentMethod || undefined,
@@ -177,6 +184,7 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
     "w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500";
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
       {error && <p className="mx-6 mt-6 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 sm:mx-8">{error}</p>}
 
@@ -211,7 +219,14 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
       <div className="grid grid-cols-1 gap-5 px-6 py-6 sm:grid-cols-2 lg:grid-cols-3 sm:px-8">
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("expenseNew.payee")}</span>
-          <Dropdown value={contactId} onChange={setContactId} options={contactOptions} placeholder={t("expenseNew.payeePlaceholder")} />
+          <Dropdown
+            value={contactId}
+            onChange={setContactId}
+            options={contactOptions}
+            placeholder={t("expenseNew.payeePlaceholder")}
+            onCreateNew={setQuickAddContactQuery}
+            createLabel={t("quickAdd.addContact")}
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("expenseNew.date")}</span>
@@ -256,7 +271,37 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("expenseNew.number")}</span>
-          <input disabled value={initial?.number ?? t("expenseNew.numberAuto")} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+          {initial ? (
+            <input disabled value={initial.number} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex shrink-0 overflow-hidden rounded-lg border border-zinc-200">
+                {(["auto", "custom"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setNumberMode(mode)}
+                    className={`px-2.5 py-2 text-xs font-semibold transition-colors ${
+                      numberMode === mode ? "bg-emerald-600 text-white" : "bg-white text-zinc-500 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {mode === "auto" ? t("expenseNew.numberModeAuto") : t("expenseNew.numberModeCustom")}
+                  </button>
+                ))}
+              </div>
+              {numberMode === "auto" ? (
+                <input disabled value={t("expenseNew.numberAuto")} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+              ) : (
+                <input
+                  autoFocus
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder={t("expenseNew.numberCustomPlaceholder")}
+                  className={inputClass}
+                />
+              )}
+            </div>
+          )}
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("expenseNew.tag")}</span>
@@ -303,7 +348,7 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
                 onChange={(e) => updateLine(i, { description: e.target.value })}
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
-              <Dropdown value={line.taxId} onChange={(v) => updateLine(i, { taxId: v })} options={taxOptions} placeholder={t("expenseNew.taxPlaceholder")} />
+              <Dropdown value={line.taxId} onChange={(v) => updateLine(i, { taxId: v })} options={taxOptions} placeholder={t("expenseNew.taxPlaceholder")} clearable />
               <input
                 type="number"
                 min={0}
@@ -377,5 +422,18 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
         </button>
       </div>
     </form>
+
+    {quickAddContactQuery !== null && (
+      <QuickAddContactModal
+        type="vendor"
+        initialName={quickAddContactQuery}
+        onClose={() => setQuickAddContactQuery(null)}
+        onCreated={(created) => {
+          setContacts((prev) => [...prev, created]);
+          setContactId(String(created.id));
+        }}
+      />
+    )}
+    </>
   );
 }

@@ -11,6 +11,8 @@ import { Account, JournalEntryDetail, SaleDocType, SaleDocumentDetail } from "@/
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { PrintDocumentData } from "@/components/print/DocumentPrintTemplate";
+import { PrintPreviewOverlay } from "@/components/print/PrintPreviewOverlay";
 
 const DOC_TYPE_LABEL_KEY: Record<SaleDocType, string> = {
   quotation: "sales.docTypeQuotation",
@@ -56,6 +58,7 @@ export default function SaleDetailPage() {
   const [journalLoading, setJournalLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<Account[]>([]);
@@ -161,6 +164,36 @@ export default function SaleDetailPage() {
   const nextStages = NEXT_STAGES[doc.docType];
   const isExchange = doc.docType === "exchange";
 
+  const printDoc: PrintDocumentData = {
+    docTypeLabel: t(DOC_TYPE_LABEL_KEY[doc.docType]),
+    number: doc.number,
+    documentDate: doc.documentDate,
+    dueDate: doc.dueDate,
+    contactLabel: t("sales.detail.customer"),
+    contactName: doc.contactName ?? "-",
+    reference: doc.reference,
+    paymentTerm: doc.paymentTerm,
+    lines: doc.lines.map((line) =>
+      isExchange
+        ? { id: line.id, name: line.targetDocumentNumber ?? "-", description: line.description, amount: line.amount }
+        : {
+            id: line.id,
+            name: line.productName ?? line.accountName ?? "-",
+            description: line.description,
+            qty: line.qty,
+            unitPrice: line.unitPrice,
+            taxName: line.taxName,
+            amount: line.amount + line.taxAmount,
+          }
+    ),
+    subtotal: doc.subtotal,
+    taxTotal: doc.taxTotal,
+    discountAmount: doc.discountAmount,
+    totalAmount: doc.totalAmount,
+    createdAt: doc.createdAt,
+    notes: doc.customerNote ?? doc.memo,
+  };
+
   return (
     <div>
       <div className="print:hidden">
@@ -169,7 +202,7 @@ export default function SaleDetailPage() {
 
       {error && <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="print:hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
         <div className="flex items-start justify-between px-6 py-5 sm:px-8">
           <div>
             <p className="text-xs text-zinc-400">
@@ -395,6 +428,7 @@ export default function SaleDetailPage() {
         </p>
       </div>
 
+
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
           {(doc.status === "draft" || doc.status === "rejected") && (
@@ -411,7 +445,7 @@ export default function SaleDetailPage() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={() => setPrintPreviewOpen(true)}
             className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
           >
             <Printer className="h-4 w-4" /> {t("purchases.action.print")}
@@ -458,10 +492,13 @@ export default function SaleDetailPage() {
             </>
           )}
 
-          {doc.status === "approved" && doc.docType === "invoice" && (
+          {doc.status === "approved" && doc.docType === "invoice" && doc.outstanding > 0 && (
             <button
               type="button"
-              onClick={() => setPaymentOpen(true)}
+              onClick={() => {
+                setPaymentAmount(String(doc.outstanding));
+                setPaymentOpen(true);
+              }}
               className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
             >
               {t("sales.action.recordPayment")}
@@ -521,6 +558,7 @@ export default function SaleDetailPage() {
                 <input
                   type="number"
                   min={0}
+                  max={doc.outstanding}
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
                   className="w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
@@ -559,6 +597,8 @@ export default function SaleDetailPage() {
           </div>
         </div>
       )}
+
+      {printPreviewOpen && <PrintPreviewOverlay doc={printDoc} onClose={() => setPrintPreviewOpen(false)} />}
     </div>
   );
 }

@@ -4,6 +4,7 @@ export const dictExpenses: Record<string, Record<"id" | "en", string>> = {
   "nav.pengeluaran": { id: "Pengeluaran", en: "Expenses" },
 
   "expenses.title": { id: "Pengeluaran", en: "Expenses" },
+  "expenses.itemLabel": { id: "biaya", en: "expenses" },
   "expenses.subtitle": { id: "Biaya", en: "Expenses" },
   "expenses.addNew": { id: "Buat Biaya Baru", en: "Create Expense" },
   "expenses.statMonth": { id: "Total Biaya Bulan Ini (dalam IDR)", en: "Total Expenses This Month (in IDR)" },
@@ -40,6 +41,9 @@ export const dictExpenses: Record<string, Record<"id" | "en", string>> = {
   "expenseNew.newPaymentMethodAdd": { id: "Tambah", en: "Add" },
   "expenseNew.number": { id: "No Biaya", en: "Expense No." },
   "expenseNew.numberAuto": { id: "[Otomatis]", en: "[Auto]" },
+  "expenseNew.numberModeAuto": { id: "Otomatis", en: "Auto" },
+  "expenseNew.numberModeCustom": { id: "Custom", en: "Custom" },
+  "expenseNew.numberCustomPlaceholder": { id: "Ketik nomor biaya...", en: "Type expense number..." },
   "expenseNew.tag": { id: "Tag", en: "Tag" },
   "expenseNew.billingAddress": { id: "Alamat Penagihan", en: "Billing Address" },
   "expenseNew.priceIncludesTax": { id: "Harga termasuk pajak", en: "Price includes tax" },

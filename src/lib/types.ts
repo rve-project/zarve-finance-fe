@@ -33,10 +33,21 @@ export interface AccountCategory {
   isActive: boolean;
 }
 
+export interface TaxComponent {
+  taxId: number;
+  name: string;
+  rate: number;
+  sign: "add" | "subtract";
+}
+
 export interface TaxCode {
   id: number;
   name: string;
   rate: number;
+  accountId: number | null;
+  accountName: string | null;
+  isCompound: boolean;
+  components: TaxComponent[];
   isActive: boolean;
 }
 
@@ -46,6 +57,36 @@ export interface Bank {
   id: number;
   name: string;
   isActive: boolean;
+}
+
+export interface PaymentTerm {
+  id: number;
+  name: string;
+  days: number | null;
+  isActive: boolean;
+}
+
+export interface FixedAssetTypeOption {
+  id: number;
+  name: string;
+  requiresPlateNumber: boolean;
+  isActive: boolean;
+}
+
+export interface DocumentSettings {
+  companyName: string;
+  address: string;
+  phone: string;
+  email: string;
+  logoUrl: string | null;
+  bankName: string;
+  bankAccountNumber: string;
+  bankAccountHolder: string;
+  showLogo: boolean;
+  showBankInfo: boolean;
+  showPaymentTerm: boolean;
+  showNotes: boolean;
+  footerNote: string;
 }
 
 export type PartnerType = "customer" | "vendor";
@@ -288,6 +329,18 @@ export interface CashFlowResult {
   endingBalance: number;
 }
 
+/** Laporan Perubahan Modal (Statement of Changes in Equity). Per-row `initialBalance`
+ * is "Saldo Awal" and `endBalance` is "Saldo Akhir" for the selected period; the
+ * movement in between is endBalance - initialBalance. */
+export interface EquityChangesResult {
+  from: string;
+  to: string;
+  rows: AccountBalanceRow[];
+  totalBeginning: number;
+  totalMovement: number;
+  totalEnding: number;
+}
+
 export interface RecapRow {
   bookingId: string;
   orderNumber: string;
@@ -494,6 +547,8 @@ export interface VendorBill {
   billDate: string;
   ref: string | null;
   totalAmount: number;
+  amountPaid: number;
+  outstanding: number;
   createdAt: string;
 }
 
@@ -721,7 +776,9 @@ export interface BankStatementImportResult {
 export type DepreciationMethod = "straight_line";
 export type FixedAssetStatus = "active" | "disposed";
 
-export type FixedAssetType = "general" | "vehicle";
+/** Free-text name referencing a fixed_asset_types row (see FixedAssetTypeOption) --
+ * not a fixed enum, since the list of asset types is user-managed. */
+export type FixedAssetType = string;
 
 export interface FixedAsset {
   id: number;
@@ -781,11 +838,37 @@ export interface DepreciationScheduleRow {
   method: DepreciationMethod;
   value: number;
   amount: number;
+  posted: boolean;
+  journalEntryId: number | null;
 }
 
 export interface DepreciationScheduleResult {
   month: string;
   data: DepreciationScheduleRow[];
+}
+
+export interface RunDepreciationResult {
+  posted: { assetId: number; assetName: string; period: string; amount: number }[];
+  skipped: { assetId: number; assetName: string; reason: string }[];
+}
+
+/** One row of an asset's full depreciation board (its whole useful life, not just one
+ * month) -- recomputed live from the asset's current parameters every time it's
+ * fetched, so editing the asset immediately changes every not-yet-posted row. */
+export interface DepreciationBoardRow {
+  period: string;
+  amount: number;
+  cumulativeDepreciation: number;
+  remainingBookValue: number;
+  posted: boolean;
+  journalEntryId: number | null;
+}
+
+export interface DepreciationBoardResult {
+  assetId: number;
+  assetName: string;
+  assetNumber: string;
+  rows: DepreciationBoardRow[];
 }
 
 export interface DisposeAssetResult {
@@ -936,6 +1019,18 @@ export interface Product {
   createdAt: string;
 }
 
+export interface ProductBundleComponent {
+  productId: number;
+  name: string;
+  code: string;
+  unit: string | null;
+  qty: number;
+}
+
+export interface ProductDetail extends Product {
+  bundleComponents?: ProductBundleComponent[];
+}
+
 export interface ProductSummary {
   available: number;
   lowStock: number;
@@ -1069,6 +1164,32 @@ export interface Contact {
   bankAccounts: ContactBankAccount[];
 }
 
+export interface ContactInput {
+  types: ContactType[];
+  name: string;
+  salutation?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  companyName?: string;
+  address?: string;
+  shippingAddress?: string;
+  email?: string;
+  mobilePhone?: string;
+  phone?: string;
+  fax?: string;
+  citizenship?: Citizenship;
+  npwp?: string;
+  idType?: string;
+  idNumber?: string;
+  nitku?: string;
+  paymentTerm?: string;
+  receivableAccountId?: number;
+  payableAccountId?: number;
+  notes?: string;
+  bankAccounts?: { bankName?: string; branch?: string; accountHolder?: string; accountNumber?: string }[];
+}
+
 export interface ExpenseLine {
   id: number;
   accountId: number;
@@ -1124,6 +1245,9 @@ export interface CreateExpenseLineInput {
 }
 
 export interface CreateExpenseInput {
+  /** Manual document number override -- leave blank to let the server assign the usual
+   * EXP/YYYY/NNNNN sequence. */
+  number?: string;
   contactId?: number;
   expenseDate: string;
   paymentMethod?: string;
@@ -1234,6 +1358,7 @@ export interface CreatePurchaseLineInput {
 }
 
 export interface CreatePurchaseInput {
+  number?: string;
   contactId?: number;
   documentDate: string;
   dueDate?: string;
@@ -1349,6 +1474,7 @@ export interface CreateSaleLineInput {
 }
 
 export interface CreateSaleInput {
+  number?: string;
   contactId?: number;
   documentDate: string;
   dueDate?: string;

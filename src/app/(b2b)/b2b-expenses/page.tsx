@@ -9,6 +9,9 @@ import { formatDate, formatRupiah } from "@/lib/format";
 import { Expense, ExpenseStats } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
+import { Pagination } from "@/components/ui/Pagination";
+
+const LIMIT = 20;
 
 export default function B2bExpensesPage() {
   const { t } = useLanguage();
@@ -16,6 +19,7 @@ export default function B2bExpensesPage() {
   const [stats, setStats] = useState<ExpenseStats | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     Promise.all([api.expenses(), api.expenseStats()])
@@ -34,6 +38,8 @@ export default function B2bExpensesPage() {
       (e) => e.number.toLowerCase().includes(q) || (e.contactName ?? "").toLowerCase().includes(q) || (e.tag ?? "").toLowerCase().includes(q)
     );
   }, [expenses, search]);
+
+  const pageExpenses = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
   return (
     <div>
@@ -63,7 +69,10 @@ export default function B2bExpensesPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder={t("expenses.searchPlaceholder")}
               className="w-full rounded-lg border border-zinc-200 py-2 pl-9 pr-3 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
@@ -85,7 +94,7 @@ export default function B2bExpensesPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((exp) => (
+              {pageExpenses.map((exp) => (
                 <tr key={exp.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                   <td className="px-4 py-2.5 text-zinc-500">{formatDate(exp.expenseDate)}</td>
                   <td className="px-4 py-2.5 font-medium">
@@ -126,6 +135,8 @@ export default function B2bExpensesPage() {
           </table>
         </div>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={filtered.length} onChange={setPage} itemLabel={t("expenses.itemLabel")} />
     </div>
   );
 }

@@ -114,7 +114,7 @@ export default function VendorBillsPage() {
 
   function startPay(bill: VendorBill) {
     setPayingBillId(bill.id);
-    setPayAmount(String(bill.totalAmount));
+    setPayAmount(String(bill.outstanding));
     setPayDate(today());
   }
 
@@ -243,6 +243,7 @@ export default function VendorBillsPage() {
               <th className="px-4 py-3 font-medium">{t("vendorBills.table.vendor")}</th>
               <th className="px-4 py-3 font-medium">{t("vendorBills.table.date")}</th>
               <th className="px-4 py-3 text-right font-medium">{t("vendorBills.table.amount")}</th>
+              <th className="px-4 py-3 text-right font-medium">{t("vendorBills.table.outstanding")}</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
@@ -253,6 +254,7 @@ export default function VendorBillsPage() {
                 <td className="px-4 py-2.5">{b.vendorName}</td>
                 <td className="px-4 py-2.5">{formatDate(b.billDate)}</td>
                 <td className="px-4 py-2.5 text-right">{formatRupiah(b.totalAmount)}</td>
+                <td className="px-4 py-2.5 text-right">{formatRupiah(b.outstanding)}</td>
                 <td className="px-4 py-2.5 text-right">
                   {payingBillId === b.id ? (
                     <div className="flex flex-col items-stretch gap-2 text-left sm:flex-row sm:items-center sm:justify-end sm:text-right">
@@ -265,6 +267,8 @@ export default function VendorBillsPage() {
                       />
                       <input
                         type="number"
+                        min={0}
+                        max={b.outstanding}
                         value={payAmount}
                         onChange={(e) => setPayAmount(e.target.value)}
                         className="w-full rounded-lg border border-zinc-200 px-2 py-1 text-sm text-right sm:w-28"
@@ -283,17 +287,19 @@ export default function VendorBillsPage() {
                         </button>
                       </div>
                     </div>
-                  ) : (
+                  ) : b.outstanding > 0 ? (
                     <button onClick={() => startPay(b)} className="text-xs font-medium text-emerald-600 hover:underline">
                       {t("vendorBills.pay.startButton")}
                     </button>
+                  ) : (
+                    <span className="text-xs font-medium text-zinc-400">{t("vendorBills.pay.paidOff")}</span>
                   )}
                 </td>
               </tr>
             ))}
             {!loading && bills.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-zinc-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-zinc-400">
                   {t("vendorBills.table.empty")}
                 </td>
               </tr>

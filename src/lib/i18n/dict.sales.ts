@@ -4,6 +4,7 @@ export const dictSales: Record<string, Record<"id" | "en", string>> = {
   "nav.penjualan": { id: "Penjualan", en: "Sales" },
 
   "sales.title": { id: "Penjualan", en: "Sales" },
+  "sales.itemLabel": { id: "dokumen", en: "documents" },
   "sales.createNew": { id: "Buat penjualan baru", en: "Create new sale" },
   "sales.docTypeQuotation": { id: "Penawaran Penjualan", en: "Sales quotation" },
   "sales.docTypeOrder": { id: "Pemesanan Penjualan", en: "Sales order" },

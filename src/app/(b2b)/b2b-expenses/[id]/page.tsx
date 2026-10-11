@@ -9,6 +9,8 @@ import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { ExpenseDetail, JournalEntryDetail } from "@/lib/types";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { PrintDocumentData } from "@/components/print/DocumentPrintTemplate";
+import { PrintPreviewOverlay } from "@/components/print/PrintPreviewOverlay";
 
 export default function ExpenseDetailPage() {
   const { t } = useLanguage();
@@ -21,6 +23,7 @@ export default function ExpenseDetailPage() {
   const [journal, setJournal] = useState<JournalEntryDetail | null>(null);
   const [journalLoading, setJournalLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -65,13 +68,35 @@ export default function ExpenseDetailPage() {
   const amountPaid = expense.payLater ? 0 : expense.totalAmount;
   const primaryTaxLine = expense.lines.find((l) => l.taxRate !== null && l.taxRate > 0);
 
+  const printDoc: PrintDocumentData = {
+    docTypeLabel: t("expenses.title"),
+    number: expense.number,
+    documentDate: expense.expenseDate,
+    contactLabel: t("expenseNew.payee"),
+    contactName: expense.contactName ?? "-",
+    reference: expense.tag,
+    lines: expense.lines.map((line) => ({
+      id: line.id,
+      name: line.accountName,
+      description: line.description,
+      taxName: line.taxName,
+      amount: line.amount + line.taxAmount,
+    })),
+    subtotal,
+    taxTotal: totalTax,
+    discountAmount: expense.discountAmount,
+    totalAmount: expense.totalAmount,
+    createdAt: expense.createdAt,
+    notes: expense.memo,
+  };
+
   return (
     <div>
       <div className="print:hidden">
         <Breadcrumb items={[{ label: t("expenses.title"), href: "/b2b-expenses" }, { label: expense.number }]} />
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+      <div className="print:hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
         <div className="flex items-start justify-between px-6 py-5 sm:px-8">
           <div>
             <p className="text-xs text-zinc-400">{t("expenseDetail.transactionLabel")}</p>
@@ -229,7 +254,7 @@ export default function ExpenseDetailPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={() => setPrintPreviewOpen(true)}
             className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
           >
             <Printer className="h-4 w-4" /> {t("expenseDetail.print")}
@@ -242,6 +267,8 @@ export default function ExpenseDetailPage() {
           </Link>
         </div>
       </div>
+
+      {printPreviewOpen && <PrintPreviewOverlay doc={printDoc} onClose={() => setPrintPreviewOpen(false)} />}
     </div>
   );
 }

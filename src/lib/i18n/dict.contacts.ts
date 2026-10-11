@@ -3,6 +3,9 @@
 export const dictContacts: Record<string, Record<"id" | "en", string>> = {
   "contacts.title": { id: "Kontak", en: "Contacts" },
   "contacts.createButton": { id: "Buat kontak", en: "Create contact" },
+  "contacts.itemLabel": { id: "kontak", en: "contacts" },
+  "contactsDetail.errorLoading": { id: "Gagal memuat kontak", en: "Failed to load contact" },
+  "contactsDetail.save": { id: "Simpan Perubahan", en: "Save Changes" },
 
   "contacts.tabCustomer": { id: "Pelanggan", en: "Customers" },
   "contacts.tabVendor": { id: "Supplier", en: "Suppliers" },

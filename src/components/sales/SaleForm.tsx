@@ -6,9 +6,12 @@ import { Plus, Trash2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
-import { Contact, CreateSaleInput, Product, SaleDocType, SaleDocumentDetail, TaxCode, Warehouse } from "@/lib/types";
+import { Contact, CreateSaleInput, PaymentTerm, Product, SaleDocType, SaleDocumentDetail, TaxCode, Warehouse } from "@/lib/types";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { QuickAddContactModal } from "@/components/ui/QuickAddContactModal";
+import { QuickAddProductModal } from "@/components/ui/QuickAddProductModal";
+import { QuickAddPaymentTermModal } from "@/components/ui/QuickAddPaymentTermModal";
 
 interface LineDraft {
   productId: string;
@@ -32,17 +35,6 @@ function addDays(date: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-// "Syarat Pembayaran" presets -- picking one auto-computes Tgl. Jatuh Tempo from the
-// document date; "Custom" leaves the due date free to edit directly. Mirrors
-// PurchaseForm.tsx exactly.
-const PAYMENT_TERMS: { label: string; days: number | null }[] = [
-  { label: "Net 30", days: 30 },
-  { label: "Cash on Delivery", days: 0 },
-  { label: "Net 15", days: 15 },
-  { label: "Net 60", days: 60 },
-  { label: "Custom", days: null },
-];
-
 interface SaleFormProps {
   docType: SaleDocType;
   initial?: SaleDocumentDetail;
@@ -62,7 +54,13 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [taxes, setTaxes] = useState<TaxCode[]>([]);
+  const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([]);
+  const [quickAddCustomerQuery, setQuickAddCustomerQuery] = useState<string | null>(null);
+  const [quickAddProductFor, setQuickAddProductFor] = useState<{ lineIndex: number; query: string } | null>(null);
+  const [quickAddPaymentTermQuery, setQuickAddPaymentTermQuery] = useState<string | null>(null);
 
+  const [numberMode, setNumberMode] = useState<"auto" | "custom">("auto");
+  const [number, setNumber] = useState("");
   const [contactId, setContactId] = useState(initial?.contactId ? String(initial.contactId) : "");
   const [email, setEmail] = useState(initial?.email ?? "");
   const [billingAddress, setBillingAddress] = useState(initial?.billingAddress ?? "");
@@ -97,12 +95,14 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
     api.products().then((res) => setProducts(res.products)).catch(() => {});
     api.warehouses().then(setWarehouses).catch(() => {});
     api.taxes().then(setTaxes).catch(() => {});
+    api.paymentTerms().then(setPaymentTerms).catch(() => {});
   }, []);
 
   const customerOptions = customers.map((c) => ({ value: String(c.id), label: c.name }));
   const productOptions = products.map((p) => ({ value: String(p.id), label: `${p.code} - ${p.name}` }));
   const warehouseOptions = warehouses.map((w) => ({ value: String(w.id), label: w.name }));
   const taxOptions = taxes.map((tax) => ({ value: String(tax.id), label: `${tax.name} (${tax.rate}%)` }));
+  const paymentTermOptions = paymentTerms.map((pt) => ({ value: pt.name, label: pt.name }));
 
   function updateLine(i: number, patch: Partial<LineDraft>) {
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -118,9 +118,9 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
     });
   }
 
-  function selectPaymentTerm(label: string) {
-    setPaymentTerm(label);
-    const term = PAYMENT_TERMS.find((p) => p.label === label);
+  function selectPaymentTerm(name: string) {
+    setPaymentTerm(name);
+    const term = paymentTerms.find((p) => p.name === name);
     if (term && term.days !== null) setDueDate(addDays(documentDate, term.days));
   }
 
@@ -164,6 +164,7 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
     setSubmitting(submitForApproval ? "submit" : "draft");
     try {
       await onSubmit({
+        number: !initial && numberMode === "custom" ? number.trim() || undefined : undefined,
         contactId: contactId ? Number(contactId) : undefined,
         documentDate,
         dueDate: dueDate || undefined,
@@ -197,13 +198,21 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
     "w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500";
 
   return (
+    <>
     <form onSubmit={(e) => handleSubmit(e, false)} className="rounded-2xl border border-zinc-200 bg-white shadow-sm">
       {error && <p className="mx-6 mt-6 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 sm:mx-8">{error}</p>}
 
       <div className="grid grid-cols-1 gap-5 px-6 py-6 sm:grid-cols-2 sm:px-8">
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("sales.new.customer")}</span>
-          <Dropdown value={contactId} onChange={setContactId} options={customerOptions} placeholder={t("sales.new.customerPlaceholder")} />
+          <Dropdown
+            value={contactId}
+            onChange={setContactId}
+            options={customerOptions}
+            placeholder={t("sales.new.customerPlaceholder")}
+            onCreateNew={setQuickAddCustomerQuery}
+            createLabel={t("quickAdd.addContact")}
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.email")}</span>
@@ -228,7 +237,37 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.number")}</span>
-          <input disabled value={initial?.number ?? t("purchases.new.numberAuto")} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+          {initial ? (
+            <input disabled value={initial.number} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex shrink-0 overflow-hidden rounded-lg border border-zinc-200">
+                {(["auto", "custom"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setNumberMode(mode)}
+                    className={`px-2.5 py-2 text-xs font-semibold transition-colors ${
+                      numberMode === mode ? "bg-emerald-600 text-white" : "bg-white text-zinc-500 hover:bg-zinc-50"
+                    }`}
+                  >
+                    {mode === "auto" ? t("purchases.new.numberModeAuto") : t("purchases.new.numberModeCustom")}
+                  </button>
+                ))}
+              </div>
+              {numberMode === "auto" ? (
+                <input disabled value={t("purchases.new.numberAuto")} className={`${inputClass} bg-zinc-50 text-zinc-400`} />
+              ) : (
+                <input
+                  autoFocus
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder={t("purchases.new.numberCustomPlaceholder")}
+                  className={inputClass}
+                />
+              )}
+            </div>
+          )}
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t(docType === "quotation" ? "purchases.new.expiryDate" : "purchases.new.dueDate")}</span>
@@ -236,7 +275,13 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("purchases.new.paymentTerm")}</span>
-          <Dropdown value={paymentTerm} onChange={selectPaymentTerm} options={PAYMENT_TERMS.map((p) => ({ value: p.label, label: p.label }))} />
+          <Dropdown
+            value={paymentTerm}
+            onChange={selectPaymentTerm}
+            options={paymentTermOptions}
+            onCreateNew={setQuickAddPaymentTermQuery}
+            createLabel={t("quickAdd.addPaymentTerm")}
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block font-medium text-zinc-700">{t("sales.new.customerRef")}</span>
@@ -289,7 +334,14 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
                 key={i}
                 className="grid grid-cols-1 gap-2 rounded-xl border border-zinc-100 p-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1.1fr)_60px_70px_110px_minmax(0,0.8fr)_110px_36px] sm:items-center sm:rounded-none sm:border-0 sm:p-0"
               >
-                <Dropdown value={line.productId} onChange={(v) => selectLineProduct(i, v)} options={productOptions} placeholder={t("purchases.new.productPlaceholder")} />
+                <Dropdown
+                  value={line.productId}
+                  onChange={(v) => selectLineProduct(i, v)}
+                  options={productOptions}
+                  placeholder={t("purchases.new.productPlaceholder")}
+                  onCreateNew={(q) => setQuickAddProductFor({ lineIndex: i, query: q })}
+                  createLabel={t("quickAdd.addProduct")}
+                />
                 <input
                   value={line.description}
                   onChange={(e) => updateLine(i, { description: e.target.value })}
@@ -310,7 +362,7 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
                   onChange={(e) => updateLine(i, { unitPrice: e.target.value })}
                   className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-right text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
-                <Dropdown value={line.taxId} onChange={(v) => updateLine(i, { taxId: v })} options={taxOptions} placeholder={t("purchases.new.taxPlaceholder")} />
+                <Dropdown value={line.taxId} onChange={(v) => updateLine(i, { taxId: v })} options={taxOptions} placeholder={t("purchases.new.taxPlaceholder")} clearable />
                 <p className="text-right text-sm font-medium text-zinc-700">{formatRupiah(computed.base + computed.taxAmount)}</p>
                 <button
                   type="button"
@@ -399,5 +451,43 @@ export function SaleForm({ docType, initial, cancelHref, onSubmit }: SaleFormPro
         </button>
       </div>
     </form>
+
+    {quickAddCustomerQuery !== null && (
+      <QuickAddContactModal
+        type="customer"
+        initialName={quickAddCustomerQuery}
+        onClose={() => setQuickAddCustomerQuery(null)}
+        onCreated={(created) => {
+          setCustomers((prev) => [...prev, created]);
+          setContactId(String(created.id));
+        }}
+      />
+    )}
+    {quickAddProductFor && (
+      <QuickAddProductModal
+        initialName={quickAddProductFor.query}
+        onClose={() => setQuickAddProductFor(null)}
+        onCreated={(created) => {
+          setProducts((prev) => [...prev, created]);
+          updateLine(quickAddProductFor.lineIndex, {
+            productId: String(created.id),
+            unitPrice: created.sellingPrice ? String(created.sellingPrice) : "",
+            taxId: created.saleTaxId ? String(created.saleTaxId) : "",
+            description: created.name,
+          });
+        }}
+      />
+    )}
+    {quickAddPaymentTermQuery !== null && (
+      <QuickAddPaymentTermModal
+        initialName={quickAddPaymentTermQuery}
+        onClose={() => setQuickAddPaymentTermQuery(null)}
+        onCreated={(created) => {
+          setPaymentTerms((prev) => [...prev, created]);
+          selectPaymentTerm(created.name);
+        }}
+      />
+    )}
+    </>
   );
 }

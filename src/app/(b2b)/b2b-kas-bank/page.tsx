@@ -8,6 +8,9 @@ import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
 import { CashBankAccount, CashBankSummary } from "@/lib/types";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
+
+const LIMIT = 20;
 
 function SummaryCard({
   label,
@@ -224,8 +227,10 @@ export default function B2bKasBankPage() {
   const [accounts, setAccounts] = useState<CashBankAccount[]>([]);
   const [showArchived, setShowArchived] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
   function load() {
+    setPage(1);
     setLoading(true);
     Promise.all([api.cashBankSummary(), api.cashBankAccounts(showArchived)])
       .then(([s, a]) => {
@@ -237,6 +242,8 @@ export default function B2bKasBankPage() {
   }
 
   useEffect(load, [showArchived]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const pageAccounts = accounts.slice((page - 1) * LIMIT, page * LIMIT);
 
   return (
     <div>
@@ -312,7 +319,7 @@ export default function B2bKasBankPage() {
                 </td>
               </tr>
             )}
-            {accounts.map((account) => (
+            {pageAccounts.map((account) => (
               <tr key={account.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                 <td className="px-4 py-2.5 font-mono text-xs text-emerald-700">
                   <Link href={`/b2b-kas-bank/${account.id}`} className="hover:underline">
@@ -344,6 +351,8 @@ export default function B2bKasBankPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} limit={LIMIT} total={accounts.length} onChange={setPage} itemLabel={t("kasBank.itemLabel")} />
     </div>
   );
 }

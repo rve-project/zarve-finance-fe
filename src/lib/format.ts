@@ -25,3 +25,15 @@ export function defaultReportRange() {
     to: now.toISOString().slice(0, 10),
   };
 }
+
+/** Matches the backend's own EPOCH const (reports.controller.ts) -- the "since
+ * inception" starting point every report's cumulative balances are built from. */
+export const EPOCH = "1970-01-01";
+
+/** One ISO date, N days earlier -- used to drill down into a "Saldo Awal" figure
+ * (cumulative up to but excluding the report's own `from` date). */
+export function dayBefore(iso: string) {
+  const d = new Date(iso);
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
