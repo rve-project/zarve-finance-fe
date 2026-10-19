@@ -5,7 +5,7 @@ import { Landmark, Scale, CheckCircle2, AlertTriangle, Download } from "lucide-r
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah, EPOCH } from "@/lib/format";
-import { BalanceSheetResult, BusinessUnit } from "@/lib/types";
+import { BalanceSheetResult, ReportUnit } from "@/lib/types";
 import { Period, ComparisonMode, thisMonthPeriod, expandComparison, periodLabel } from "@/lib/periods";
 import { activeAccountsAcrossColumns, buildColumnMaps } from "@/lib/reportColumns";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -13,17 +13,29 @@ import { StatTile } from "@/components/ui/StatTile";
 import { SegmentedBar } from "@/components/ui/SegmentedBar";
 import { PeriodPicker } from "@/components/ui/PeriodPicker";
 import { ComparisonPicker } from "@/components/ui/ComparisonPicker";
-import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
+import { ReportUnitToggle } from "@/components/ui/ReportUnitToggle";
 import { AmountLink } from "@/components/ui/AmountLink";
+import { UnitBadge } from "@/components/ui/UnitBadge";
 
 // Fixed categorical order, validated (see dataviz skill) -- never cycled. Anything
 // past the 5th-largest account folds into "Lainnya" (gray) instead of reusing a hue.
 const COMPOSITION_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#4a3aa7", "#c026a3"];
 const OTHER_COLOR = "#9a9a9a";
 
-function topSegments(rows: { account: { name: string }; endBalance: number }[], otherLabel: string) {
+function topSegments(
+  rows: { account: { name: string; businessUnit: string }; endBalance: number }[],
+  otherLabel: string,
+  tagUnit: boolean
+) {
   const active = rows.filter((r) => r.endBalance > 0).sort((a, b) => b.endBalance - a.endBalance);
-  const top = active.slice(0, 5).map((r, i) => ({ label: r.account.name, value: r.endBalance, color: COMPOSITION_COLORS[i] }));
+  // In consolidated mode, B2B and Zarve can both have an account with the same name
+  // (e.g. "Piutang Usaha") -- tag the label so the legend stays meaningful, not just
+  // deduplicated (SegmentedBar's own key is index-based, so this is purely cosmetic).
+  const top = active.slice(0, 5).map((r, i) => ({
+    label: tagUnit ? `${r.account.name} (${r.account.businessUnit.toUpperCase()})` : r.account.name,
+    value: r.endBalance,
+    color: COMPOSITION_COLORS[i],
+  }));
   const restTotal = active.slice(5).reduce((sum, r) => sum + r.endBalance, 0);
   return restTotal > 0 ? [...top, { label: otherLabel, value: restTotal, color: OTHER_COLOR }] : top;
 }
@@ -36,7 +48,7 @@ interface Column {
 export default function BalanceSheetPage() {
   const { t } = useLanguage();
   const MONTH_LABELS = Array.from({ length: 12 }, (_, i) => t(`date.month${i}`));
-  const [unit, setUnit] = useState<BusinessUnit>("b2b");
+  const [unit, setUnit] = useState<ReportUnit>("b2b");
   const [period, setPeriod] = useState<Period>(thisMonthPeriod());
   const [comparison, setComparison] = useState<ComparisonMode>({ type: "none" });
   const [columns, setColumns] = useState<Column[]>([]);
@@ -91,12 +103,15 @@ export default function BalanceSheetPage() {
             <tbody>
               {active.map((r) => (
                 <tr key={r.account.id} className="border-b border-zinc-50">
-                  <td className="py-1.5">{r.account.name}</td>
+                  <td className="py-1.5">
+                    {r.account.name}
+                    {unit === "consolidated" && r.account.id !== 0 && <UnitBadge unit={r.account.businessUnit} />}
+                  </td>
                   <td className="py-1.5 text-right">
                     {/* account.id 0 is the synthetic "Laba Ditahan (Berjalan)" row (net
                         income rolled into equity) -- not a real account, nothing to drill into. */}
                     {r.account.id ? (
-                      <AmountLink accountId={r.account.id} from={EPOCH} to={period.to} unit={unit} value={r.endBalance} />
+                      <AmountLink accountId={r.account.id} from={EPOCH} to={period.to} unit={r.account.businessUnit} value={r.endBalance} />
                     ) : (
                       formatRupiah(r.endBalance)
                     )}
@@ -132,13 +147,16 @@ export default function BalanceSheetPage() {
           <tbody>
             {accounts.map((acc) => (
               <tr key={acc.id} className="border-b border-zinc-50">
-                <td className="py-1.5">{acc.name}</td>
+                <td className="py-1.5">
+                  {acc.name}
+                  {unit === "consolidated" && acc.id !== 0 && <UnitBadge unit={acc.businessUnit} />}
+                </td>
                 {columns.map((col, i) => {
                   const row = maps[i].get(acc.id);
                   const value = row?.endBalance ?? 0;
                   return (
                     <td key={col.period.from + col.period.to} className="py-1.5 text-right">
-                      {acc.id ? <AmountLink accountId={acc.id} from={EPOCH} to={col.period.to} unit={unit} value={value} /> : formatRupiah(value)}
+                      {acc.id ? <AmountLink accountId={acc.id} from={EPOCH} to={col.period.to} unit={acc.businessUnit} value={value} /> : formatRupiah(value)}
                     </td>
                   );
                 })}
@@ -171,7 +189,7 @@ export default function BalanceSheetPage() {
 
   return (
     <div>
-      <PageHeader title={t("balanceSheet.title")} subtitle={t("balanceSheet.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
+      <PageHeader title={t("balanceSheet.title")} subtitle={t("balanceSheet.subtitle")} action={<ReportUnitToggle value={unit} onChange={setUnit} />} />
 
       <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <PeriodPicker value={period} onChange={setPeriod} />
@@ -218,12 +236,12 @@ export default function BalanceSheetPage() {
 
           <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
-              <SegmentedBar title={t("balanceSheet.assetComposition")} segments={topSegments(primaryData.assets, t("home.otherBranch"))} />
+              <SegmentedBar title={t("balanceSheet.assetComposition")} segments={topSegments(primaryData.assets, t("home.otherBranch"), unit === "consolidated")} />
             </div>
             <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
               <SegmentedBar
                 title={t("balanceSheet.liabilitiesEquityComposition")}
-                segments={topSegments([...primaryData.liabilities, ...primaryData.equity], t("home.otherBranch"))}
+                segments={topSegments([...primaryData.liabilities, ...primaryData.equity], t("home.otherBranch"), unit === "consolidated")}
               />
             </div>
           </div>

@@ -5,15 +5,16 @@ import { PiggyBank, TrendingUp, Landmark, Download } from "lucide-react";
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah, EPOCH, dayBefore } from "@/lib/format";
-import { BusinessUnit, EquityChangesResult } from "@/lib/types";
+import { ReportUnit, EquityChangesResult } from "@/lib/types";
 import { Period, ComparisonMode, thisMonthPeriod, expandComparison, periodLabel } from "@/lib/periods";
 import { activeAccountsAcrossColumns, buildColumnMaps } from "@/lib/reportColumns";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatTile } from "@/components/ui/StatTile";
 import { PeriodPicker } from "@/components/ui/PeriodPicker";
 import { ComparisonPicker } from "@/components/ui/ComparisonPicker";
-import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
+import { ReportUnitToggle } from "@/components/ui/ReportUnitToggle";
 import { AmountLink } from "@/components/ui/AmountLink";
+import { UnitBadge } from "@/components/ui/UnitBadge";
 
 interface Column {
   period: Period;
@@ -23,7 +24,7 @@ interface Column {
 export default function EquityChangesPage() {
   const { t } = useLanguage();
   const MONTH_LABELS = Array.from({ length: 12 }, (_, i) => t(`date.month${i}`));
-  const [unit, setUnit] = useState<BusinessUnit>("b2b");
+  const [unit, setUnit] = useState<ReportUnit>("b2b");
   const [period, setPeriod] = useState<Period>(thisMonthPeriod());
   const [comparison, setComparison] = useState<ComparisonMode>({ type: "none" });
   const [columns, setColumns] = useState<Column[]>([]);
@@ -62,7 +63,7 @@ export default function EquityChangesPage() {
 
   return (
     <div>
-      <PageHeader title={t("equityChanges.title")} subtitle={t("equityChanges.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
+      <PageHeader title={t("equityChanges.title")} subtitle={t("equityChanges.subtitle")} action={<ReportUnitToggle value={unit} onChange={setUnit} />} />
 
       <div className="relative z-40 mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <PeriodPicker value={period} onChange={setPeriod} />
@@ -128,19 +129,22 @@ export default function EquityChangesPage() {
               primaryRows.map((r) => (
                 <tr key={r.account.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                   <td className="px-3 py-2.5 font-mono text-xs text-zinc-500">{r.account.code}</td>
-                  <td className="px-3 py-2.5">{r.account.name}</td>
+                  <td className="px-3 py-2.5">
+                    {r.account.name}
+                    {unit === "consolidated" && r.account.id !== 0 && <UnitBadge unit={r.account.businessUnit} />}
+                  </td>
                   {/* account.id 0 is the synthetic "Laba Ditahan (Berjalan)" row (net income
                       rolled into equity) -- not a real account, nothing to drill into. */}
                   {r.account.id ? (
                     <>
                       <td className="px-3 py-2.5 text-right text-zinc-500">
-                        <AmountLink accountId={r.account.id} from={EPOCH} to={dayBefore(period.from)} unit={unit} value={r.initialBalance} />
+                        <AmountLink accountId={r.account.id} from={EPOCH} to={dayBefore(period.from)} unit={r.account.businessUnit} value={r.initialBalance} />
                       </td>
                       <td className="px-3 py-2.5 text-right">
-                        <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.endBalance - r.initialBalance} />
+                        <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={r.account.businessUnit} value={r.endBalance - r.initialBalance} />
                       </td>
                       <td className="px-3 py-2.5 text-right font-semibold">
-                        <AmountLink accountId={r.account.id} from={EPOCH} to={period.to} unit={unit} value={r.endBalance} />
+                        <AmountLink accountId={r.account.id} from={EPOCH} to={period.to} unit={r.account.businessUnit} value={r.endBalance} />
                       </td>
                     </>
                   ) : (
@@ -156,13 +160,16 @@ export default function EquityChangesPage() {
               activeAccounts.map((acc) => (
                 <tr key={acc.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                   <td className="px-3 py-2.5 font-mono text-xs text-zinc-500">{acc.code}</td>
-                  <td className="px-3 py-2.5">{acc.name}</td>
+                  <td className="px-3 py-2.5">
+                    {acc.name}
+                    {unit === "consolidated" && acc.id !== 0 && <UnitBadge unit={acc.businessUnit} />}
+                  </td>
                   {columns.map((col, i) => {
                     const row = columnMaps[i].get(acc.id);
                     const value = row?.endBalance ?? 0;
                     return (
                       <td key={col.period.from + col.period.to} className="px-3 py-2.5 text-right font-semibold">
-                        {acc.id ? <AmountLink accountId={acc.id} from={EPOCH} to={col.period.to} unit={unit} value={value} /> : formatRupiah(value)}
+                        {acc.id ? <AmountLink accountId={acc.id} from={EPOCH} to={col.period.to} unit={acc.businessUnit} value={value} /> : formatRupiah(value)}
                       </td>
                     );
                   })}

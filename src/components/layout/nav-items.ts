@@ -83,7 +83,6 @@ export const navSections: NavSection[] = [
       { labelKey: "nav.tagihanVendor", href: "/vendor-bills", icon: Receipt, module: "zarve" },
       { labelKey: "nav.rekonsiliasiBank", href: "/reconciliation", icon: Wallet, module: "zarve" },
       { labelKey: "nav.sinkronisasiData", href: "/import", icon: FileSpreadsheet, module: "zarve" },
-      { labelKey: "nav.piutangJatuhTempo", href: "/reports/aged-receivables", icon: AlertTriangle, module: "zarve" },
       { labelKey: "nav.profitabilitasKendaraan", href: "/reports/vehicle-profitability", icon: Car, module: "zarve" },
       { labelKey: "nav.keluarKota", href: "/reports/geofence-violations", icon: MapPinOff, module: "zarve" },
     ],
@@ -102,6 +101,7 @@ export const navSections: NavSection[] = [
       { labelKey: "nav.neraca", href: "/reports/balance-sheet", icon: Scale, module: "laporan-keuangan" },
       { labelKey: "nav.perubahanModal", href: "/reports/equity-changes", icon: PiggyBank, module: "laporan-keuangan" },
       { labelKey: "nav.arusKas", href: "/reports/cash-flow", icon: Wallet, module: "laporan-keuangan" },
+      { labelKey: "nav.piutangJatuhTempo", href: "/reports/aged-receivables", icon: AlertTriangle, module: "laporan-keuangan" },
     ],
   },
   {

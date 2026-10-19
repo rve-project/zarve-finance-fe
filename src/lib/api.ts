@@ -13,6 +13,7 @@ import {
   AgedReceivablesResult,
   AppSettings,
   BalanceSheetResult,
+  ReportUnit,
   BankStatementImportResult,
   CashBankAccount,
   CashBankLedgerResult,
@@ -173,7 +174,7 @@ const get = <T>(path: string) => request<T>(path);
  * explicit unit here must NOT go through `getBusinessUnit()`/the global
  * BusinessUnitProvider (that's one value for the whole app, and both sections' fetches
  * run concurrently), so this passes "X-Business-Unit" straight through instead. */
-const getForUnit = <T>(path: string, unit: "zarve" | "b2b") => request<T>(path, { headers: { "X-Business-Unit": unit } });
+const getForUnit = <T>(path: string, unit: ReportUnit) => request<T>(path, { headers: { "X-Business-Unit": unit } });
 const post = <T>(path: string, data?: unknown) =>
   request<T>(path, { method: "POST", body: data !== undefined ? JSON.stringify(data) : undefined });
 const postForUnit = <T>(path: string, data: unknown, unit: "zarve" | "b2b") =>
@@ -181,7 +182,7 @@ const postForUnit = <T>(path: string, data: unknown, unit: "zarve" | "b2b") =>
 const put = <T>(path: string, data: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(data) });
 const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 
-async function downloadFile(path: string, filename: string, unit?: "zarve" | "b2b") {
+async function downloadFile(path: string, filename: string, unit?: ReportUnit) {
   const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
     headers: {
@@ -320,9 +321,9 @@ export const api = {
     get<ReconciliationHistoryPage>(`/reconciliation/history${qs({ page, limit })}`),
 
   trialBalance: (from: string, to: string) => get<TrialBalanceResult>(`/reports/trial-balance${qs({ from, to })}`),
-  trialBalanceForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
+  trialBalanceForUnit: (from: string, to: string, unit: ReportUnit) =>
     getForUnit<TrialBalanceResult>(`/reports/trial-balance${qs({ from, to })}`, unit),
-  exportTrialBalance: (from: string, to: string, unit: "zarve" | "b2b") =>
+  exportTrialBalance: (from: string, to: string, unit: ReportUnit) =>
     downloadFile(`/reports/trial-balance/export${qs({ from, to })}`, `Trial Balance ${from} - ${to}.xlsx`, unit),
   generalLedger: (accountId: number, from: string, to: string, page = 1, limit = 50) =>
     get<GeneralLedgerResult>(`/reports/general-ledger${qs({ accountId, from, to, page, limit })}`),
@@ -331,22 +332,22 @@ export const api = {
   exportGeneralLedger: (accountId: number, from: string, to: string, unit: "zarve" | "b2b") =>
     downloadFile(`/reports/general-ledger/export${qs({ accountId, from, to })}`, `General Ledger ${from} - ${to}.xlsx`, unit),
   profitAndLoss: (from: string, to: string) => get<ProfitAndLossResult>(`/reports/profit-loss${qs({ from, to })}`),
-  profitAndLossForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
+  profitAndLossForUnit: (from: string, to: string, unit: ReportUnit) =>
     getForUnit<ProfitAndLossResult>(`/reports/profit-loss${qs({ from, to })}`, unit),
-  exportProfitAndLoss: (from: string, to: string, unit: "zarve" | "b2b") =>
+  exportProfitAndLoss: (from: string, to: string, unit: ReportUnit) =>
     downloadFile(`/reports/profit-loss/export${qs({ from, to })}`, `Laba Rugi ${from} - ${to}.xlsx`, unit),
   balanceSheet: (asOf: string) => get<BalanceSheetResult>(`/reports/balance-sheet${qs({ asOf })}`),
-  balanceSheetForUnit: (asOf: string, unit: "zarve" | "b2b") => getForUnit<BalanceSheetResult>(`/reports/balance-sheet${qs({ asOf })}`, unit),
-  exportBalanceSheet: (asOf: string, unit: "zarve" | "b2b") =>
+  balanceSheetForUnit: (asOf: string, unit: ReportUnit) => getForUnit<BalanceSheetResult>(`/reports/balance-sheet${qs({ asOf })}`, unit),
+  exportBalanceSheet: (asOf: string, unit: ReportUnit) =>
     downloadFile(`/reports/balance-sheet/export${qs({ asOf })}`, `Neraca ${asOf}.xlsx`, unit),
-  equityChangesForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
+  equityChangesForUnit: (from: string, to: string, unit: ReportUnit) =>
     getForUnit<EquityChangesResult>(`/reports/equity-changes${qs({ from, to })}`, unit),
-  exportEquityChanges: (from: string, to: string, unit: "zarve" | "b2b") =>
+  exportEquityChanges: (from: string, to: string, unit: ReportUnit) =>
     downloadFile(`/reports/equity-changes/export${qs({ from, to })}`, `Laporan Perubahan Modal ${from} - ${to}.xlsx`, unit),
   cashFlow: (from: string, to: string) => get<CashFlowResult>(`/reports/cash-flow${qs({ from, to })}`),
-  cashFlowForUnit: (from: string, to: string, unit: "zarve" | "b2b") =>
+  cashFlowForUnit: (from: string, to: string, unit: ReportUnit) =>
     getForUnit<CashFlowResult>(`/reports/cash-flow${qs({ from, to })}`, unit),
-  exportCashFlow: (from: string, to: string, unit: "zarve" | "b2b") =>
+  exportCashFlow: (from: string, to: string, unit: ReportUnit) =>
     downloadFile(`/reports/cash-flow/export${qs({ from, to })}`, `Arus Kas ${from} - ${to}.xlsx`, unit),
 
   revenueRecap: (startDate: string, endDate: string) =>
@@ -419,7 +420,8 @@ export const api = {
     memo?: string;
   }) => post<VendorPaymentPage["data"][number]>("/vendor-payments", data),
 
-  agedReceivables: (asOf?: string, partnerId?: number) => get<AgedReceivablesResult>(`/reports/aged-receivables${qs({ asOf, partnerId })}`),
+  agedReceivablesForUnit: (unit: "zarve" | "b2b", asOf?: string, partnerId?: number) =>
+    getForUnit<AgedReceivablesResult>(`/reports/aged-receivables${qs({ asOf, partnerId })}`, unit),
   vehicleProfitability: (from: string, to: string) =>
     get<VehicleProfitabilityResult>(`/reports/vehicle-profitability${qs({ from, to })}`),
   geofenceViolations: (from: string, to: string, page = 1, limit = 20) =>

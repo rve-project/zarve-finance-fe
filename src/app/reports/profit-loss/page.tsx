@@ -6,7 +6,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Toolti
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
-import { BusinessUnit, ProfitAndLossResult } from "@/lib/types";
+import { ReportUnit, ProfitAndLossResult } from "@/lib/types";
 import { Period, ComparisonMode, thisMonthPeriod, expandComparison, periodLabel } from "@/lib/periods";
 import { activeAccountsAcrossColumns, buildColumnMaps } from "@/lib/reportColumns";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -14,8 +14,9 @@ import { StatTile } from "@/components/ui/StatTile";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
 import { PeriodPicker } from "@/components/ui/PeriodPicker";
 import { ComparisonPicker } from "@/components/ui/ComparisonPicker";
-import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
+import { ReportUnitToggle } from "@/components/ui/ReportUnitToggle";
 import { AmountLink } from "@/components/ui/AmountLink";
+import { UnitBadge } from "@/components/ui/UnitBadge";
 
 const INCOME_COLOR = "#0ca30c";
 const EXPENSE_COLOR = "#d03b3b";
@@ -32,7 +33,7 @@ interface Column {
 export default function ProfitAndLossPage() {
   const { t } = useLanguage();
   const MONTH_LABELS = Array.from({ length: 12 }, (_, i) => t(`date.month${i}`));
-  const [unit, setUnit] = useState<BusinessUnit>("b2b");
+  const [unit, setUnit] = useState<ReportUnit>("b2b");
   const [period, setPeriod] = useState<Period>(thisMonthPeriod());
   const [comparison, setComparison] = useState<ComparisonMode>({ type: "none" });
   const [columns, setColumns] = useState<Column[]>([]);
@@ -72,7 +73,7 @@ export default function ProfitAndLossPage() {
 
   return (
     <div>
-      <PageHeader title={t("profitLoss.title")} subtitle={t("profitLoss.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
+      <PageHeader title={t("profitLoss.title")} subtitle={t("profitLoss.subtitle")} action={<ReportUnitToggle value={unit} onChange={setUnit} />} />
 
       <div className="relative z-40 mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <PeriodPicker value={period} onChange={setPeriod} />
@@ -180,22 +181,28 @@ export default function ProfitAndLossPage() {
                     .filter((r) => r.periodCredit !== 0 || r.periodDebit !== 0)
                     .map((r) => (
                       <tr key={r.account.id} className="border-b border-zinc-50">
-                        <td className="py-1.5">{r.account.name}</td>
+                        <td className="py-1.5">
+                          {r.account.name}
+                          {unit === "consolidated" && <UnitBadge unit={r.account.businessUnit} />}
+                        </td>
                         <td className="py-1.5 text-right">
-                          <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.periodCredit - r.periodDebit} />
+                          <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={r.account.businessUnit} value={r.periodCredit - r.periodDebit} />
                         </td>
                       </tr>
                     ))}
                 {isComparing &&
                   incomeAccounts.map((acc) => (
                     <tr key={acc.id} className="border-b border-zinc-50">
-                      <td className="py-1.5">{acc.name}</td>
+                      <td className="py-1.5">
+                        {acc.name}
+                        {unit === "consolidated" && <UnitBadge unit={acc.businessUnit} />}
+                      </td>
                       {columns.map((col, i) => {
                         const row = incomeMaps[i].get(acc.id);
                         const value = row ? row.periodCredit - row.periodDebit : 0;
                         return (
                           <td key={col.period.from + col.period.to} className="py-1.5 text-right">
-                            <AmountLink accountId={acc.id} from={col.period.from} to={col.period.to} unit={unit} value={value} />
+                            <AmountLink accountId={acc.id} from={col.period.from} to={col.period.to} unit={acc.businessUnit} value={value} />
                           </td>
                         );
                       })}
@@ -231,22 +238,28 @@ export default function ProfitAndLossPage() {
                     .filter((r) => r.periodDebit !== 0 || r.periodCredit !== 0)
                     .map((r) => (
                       <tr key={r.account.id} className="border-b border-zinc-50">
-                        <td className="py-1.5">{r.account.name}</td>
+                        <td className="py-1.5">
+                          {r.account.name}
+                          {unit === "consolidated" && <UnitBadge unit={r.account.businessUnit} />}
+                        </td>
                         <td className="py-1.5 text-right">
-                          <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.periodDebit - r.periodCredit} />
+                          <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={r.account.businessUnit} value={r.periodDebit - r.periodCredit} />
                         </td>
                       </tr>
                     ))}
                 {isComparing &&
                   expenseAccounts.map((acc) => (
                     <tr key={acc.id} className="border-b border-zinc-50">
-                      <td className="py-1.5">{acc.name}</td>
+                      <td className="py-1.5">
+                        {acc.name}
+                        {unit === "consolidated" && <UnitBadge unit={acc.businessUnit} />}
+                      </td>
                       {columns.map((col, i) => {
                         const row = expenseMaps[i].get(acc.id);
                         const value = row ? row.periodDebit - row.periodCredit : 0;
                         return (
                           <td key={col.period.from + col.period.to} className="py-1.5 text-right">
-                            <AmountLink accountId={acc.id} from={col.period.from} to={col.period.to} unit={unit} value={value} />
+                            <AmountLink accountId={acc.id} from={col.period.from} to={col.period.to} unit={acc.businessUnit} value={value} />
                           </td>
                         );
                       })}

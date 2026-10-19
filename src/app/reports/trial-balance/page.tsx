@@ -6,7 +6,7 @@ import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, 
 import { api } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah, EPOCH, dayBefore } from "@/lib/format";
-import { AccountType, BusinessUnit, TrialBalanceResult } from "@/lib/types";
+import { AccountType, ReportUnit, TrialBalanceResult } from "@/lib/types";
 import { Period, ComparisonMode, thisMonthPeriod, expandComparison, periodLabel } from "@/lib/periods";
 import { activeAccountsAcrossColumns, buildColumnMaps } from "@/lib/reportColumns";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -14,8 +14,9 @@ import { StatTile } from "@/components/ui/StatTile";
 import { PeriodPicker } from "@/components/ui/PeriodPicker";
 import { ComparisonPicker } from "@/components/ui/ComparisonPicker";
 import { ChartTooltip } from "@/components/ui/ChartTooltip";
-import { BusinessUnitToggle } from "@/components/ui/BusinessUnitToggle";
+import { ReportUnitToggle } from "@/components/ui/ReportUnitToggle";
 import { AmountLink } from "@/components/ui/AmountLink";
+import { UnitBadge } from "@/components/ui/UnitBadge";
 
 // Validated categorical order (see dataviz skill's reference palette) -- the first 5
 // slots of the documented 8-hue sequence, used as-is rather than re-picked by
@@ -47,7 +48,7 @@ interface Column {
 export default function TrialBalancePage() {
   const { t } = useLanguage();
   const MONTH_LABELS = Array.from({ length: 12 }, (_, i) => t(`date.month${i}`));
-  const [unit, setUnit] = useState<BusinessUnit>("b2b");
+  const [unit, setUnit] = useState<ReportUnit>("b2b");
   const [period, setPeriod] = useState<Period>(thisMonthPeriod());
   const [comparison, setComparison] = useState<ComparisonMode>({ type: "none" });
   const [columns, setColumns] = useState<Column[]>([]);
@@ -87,7 +88,7 @@ export default function TrialBalancePage() {
 
   return (
     <div>
-      <PageHeader title={t("nav.trialBalance")} subtitle={t("trialBalance.subtitle")} action={<BusinessUnitToggle value={unit} onChange={setUnit} />} />
+      <PageHeader title={t("nav.trialBalance")} subtitle={t("trialBalance.subtitle")} action={<ReportUnitToggle value={unit} onChange={setUnit} />} />
 
       <div className="relative z-40 mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4">
         <PeriodPicker value={period} onChange={setPeriod} />
@@ -184,18 +185,21 @@ export default function TrialBalancePage() {
               primary.map((r) => (
                 <tr key={r.account.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                   <td className="px-3 py-2.5 font-mono text-xs text-zinc-500">{r.account.code}</td>
-                  <td className="px-3 py-2.5">{r.account.name}</td>
+                  <td className="px-3 py-2.5">
+                    {r.account.name}
+                    {unit === "consolidated" && <UnitBadge unit={r.account.businessUnit} />}
+                  </td>
                   <td className="px-3 py-2.5 text-right text-zinc-500">
-                    <AmountLink accountId={r.account.id} from={EPOCH} to={dayBefore(period.from)} unit={unit} value={r.initialBalance} />
+                    <AmountLink accountId={r.account.id} from={EPOCH} to={dayBefore(period.from)} unit={r.account.businessUnit} value={r.initialBalance} />
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.periodDebit} />
+                    <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={r.account.businessUnit} value={r.periodDebit} />
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={unit} value={r.periodCredit} />
+                    <AmountLink accountId={r.account.id} from={period.from} to={period.to} unit={r.account.businessUnit} value={r.periodCredit} />
                   </td>
                   <td className="px-3 py-2.5 text-right font-semibold">
-                    <AmountLink accountId={r.account.id} from={EPOCH} to={period.to} unit={unit} value={r.endBalance} />
+                    <AmountLink accountId={r.account.id} from={EPOCH} to={period.to} unit={r.account.businessUnit} value={r.endBalance} />
                   </td>
                 </tr>
               ))}
@@ -203,12 +207,15 @@ export default function TrialBalancePage() {
               activeAccounts.map((acc) => (
                 <tr key={acc.id} className="border-b border-zinc-50 hover:bg-zinc-50">
                   <td className="px-3 py-2.5 font-mono text-xs text-zinc-500">{acc.code}</td>
-                  <td className="px-3 py-2.5">{acc.name}</td>
+                  <td className="px-3 py-2.5">
+                    {acc.name}
+                    {unit === "consolidated" && <UnitBadge unit={acc.businessUnit} />}
+                  </td>
                   {columns.map((col, i) => {
                     const row = columnMaps[i].get(acc.id);
                     return (
                       <td key={col.period.from + col.period.to} className="px-3 py-2.5 text-right font-semibold">
-                        {row ? <AmountLink accountId={acc.id} from={EPOCH} to={col.period.to} unit={unit} value={row.endBalance} /> : formatRupiah(0)}
+                        {row ? <AmountLink accountId={acc.id} from={EPOCH} to={col.period.to} unit={acc.businessUnit} value={row.endBalance} /> : formatRupiah(0)}
                       </td>
                     );
                   })}

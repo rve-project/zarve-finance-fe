@@ -30,8 +30,8 @@ export const dictFinancialReportsB: Record<string, Record<Lang, string>> = {
   // ---- Aged Receivables (Piutang Jatuh Tempo) ----
   "agedReceivables.title": { id: "Piutang Jatuh Tempo", en: "Aged Receivables" },
   "agedReceivables.subtitle": {
-    id: "Piutang belum tertagih, dikelompokkan berdasarkan umur sejak tanggal invoice",
-    en: "Uncollected receivables, grouped by age since the invoice date",
+    id: "Piutang belum tertagih, dikelompokkan berdasarkan umur (B2B: sejak jatuh tempo, Zarve: sejak tanggal invoice)",
+    en: "Uncollected receivables, grouped by age (B2B: since due date, Zarve: since invoice date)",
   },
   "agedReceivables.asOfDate": { id: "Per Tanggal", en: "As of Date" },
   "agedReceivables.show": { id: "Tampilkan", en: "Show" },
@@ -51,6 +51,12 @@ export const dictFinancialReportsB: Record<string, Record<Lang, string>> = {
   "agedReceivables.colPaid": { id: "Dibayar", en: "Paid" },
   "agedReceivables.colOutstanding": { id: "Sisa", en: "Outstanding" },
   "agedReceivables.viewInvoice": { id: "Lihat invoice", en: "View invoice" },
+  "agedReceivables.quickToday": { id: "Hari Ini", en: "Today" },
+  "agedReceivables.quickEndOfThisMonth": { id: "Akhir Bulan Ini", en: "End of This Month" },
+  "agedReceivables.quickEndOfLastMonth": { id: "Akhir Bulan Lalu", en: "End of Last Month" },
+  "agedReceivables.searchPlaceholder": { id: "Cari nama driver/customer...", en: "Search driver/customer name..." },
+  "agedReceivables.bucketAll": { id: "Semua Umur", en: "All Ages" },
+  "agedReceivables.noMatchState": { id: "Tidak ada yang cocok dengan filter.", en: "Nothing matches the current filter." },
 
   // ---- Vehicle Profitability (Profitabilitas per Kendaraan) ----
   "vehicleProfitability.title": { id: "Profitabilitas per Kendaraan", en: "Profitability by Vehicle" },

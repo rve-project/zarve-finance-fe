@@ -78,4 +78,17 @@ export const dictMasterData: Record<string, Record<"id" | "en", string>> = {
   "vehicles.categoryFuel": { id: "Bensin", en: "Fuel" },
   "vehicles.empty": { id: "Belum ada data kendaraan.", en: "No vehicle data yet." },
   "vehicles.itemLabel": { id: "kendaraan", en: "vehicle" },
+  "vehicles.colAccount": { id: "Akun Pendapatan/Utang", en: "Revenue/Payable Account" },
+  "vehicles.accountDefault": { id: "Default (EV/Bensin)", en: "Default (EV/Fuel)" },
+  "vehicles.editAccountButton": { id: "Edit Akun", en: "Edit Account" },
+  "vehicles.editAccountTitle": { id: "Akun Pendapatan/Utang Kendaraan", en: "Vehicle Revenue/Payable Account" },
+  "vehicles.editAccountLabel": { id: "Akun", en: "Account" },
+  "vehicles.editAccountDefaultPlaceholder": { id: "Pakai default EV/Bensin dari Pengaturan", en: "Use EV/Fuel default from Settings" },
+  "vehicles.editAccountHint": {
+    id: "Kosongkan untuk pakai akun default EV/Bensin dari Pengaturan. Pilih akun utang kalau kendaraan ini milik pihak ketiga (konsinyasi/agen). Perubahan hanya berlaku untuk invoice baru, tidak mengubah jurnal yang sudah terlanjur diposting.",
+    en: "Leave empty to use the EV/Fuel default from Settings. Pick a payable account if this vehicle belongs to a third-party agent (consignment). Changes only apply to new invoices, not to journal entries already posted.",
+  },
+  "vehicles.accountTypeIncome": { id: "Pendapatan", en: "Income" },
+  "vehicles.accountTypeLiability": { id: "Utang", en: "Liability" },
+  "vehicles.editAccountError": { id: "Gagal menyimpan akun kendaraan.", en: "Failed to save vehicle account." },
 };

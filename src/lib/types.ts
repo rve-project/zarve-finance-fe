@@ -1,5 +1,10 @@
 export type BusinessUnit = "zarve" | "b2b";
 
+/** The 5 financial-statement report pages (Trial Balance, Laba Rugi, Neraca, Arus Kas,
+ * Perubahan Modal) additionally accept "consolidated" (combined B2B+Zarve totals) on
+ * top of the usual per-unit toggle every other screen uses. */
+export type ReportUnit = BusinessUnit | "consolidated";
+
 export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
 export type AccountAccessMode = "all" | "some";
 
@@ -15,6 +20,10 @@ export interface Account {
   taxId: number | null;
   bankName: string | null;
   accessMode: AccountAccessMode;
+  /** Always present on every report row (and most /accounts responses) -- declared
+   * here mainly so the "Konsolidasi" report views can tag each row with its real
+   * originating unit once B2B and Zarve accounts are listed side by side. */
+  businessUnit: BusinessUnit;
 }
 
 /** Returned only by GET/POST/PUT /accounts/:id -- the plain list endpoint doesn't

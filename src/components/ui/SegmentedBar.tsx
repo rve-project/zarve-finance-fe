@@ -24,7 +24,7 @@ export function SegmentedBar({ segments, title }: { segments: Segment[]; title?:
           const pct = total > 0 ? (s.value / total) * 100 : 0;
           return (
             <div
-              key={s.label}
+              key={`${i}-${s.label}`}
               title={`${s.label}: ${s.value.toLocaleString("id-ID")} (${pct.toFixed(1)}%)`}
               className="flex items-center justify-center overflow-hidden text-[11px] font-medium text-white transition-opacity hover:opacity-90"
               style={{
