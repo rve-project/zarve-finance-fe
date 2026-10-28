@@ -9,6 +9,7 @@ import {
   Contact as ContactIcon,
   FileSignature,
   FileSpreadsheet,
+  FileWarning,
   Home,
   History,
   MapPinOff,
@@ -110,6 +111,11 @@ export const navSections: NavSection[] = [
       { labelKey: "nav.manajemenUser", href: "/users", icon: UserCog, module: "administrasi" },
       { labelKey: "nav.pengaturan", href: "/settings", icon: Settings, module: "administrasi" },
       { labelKey: "nav.validasiJurnal", href: "/validasi-jurnal", icon: ClipboardCheck, module: "administrasi" },
+      // No requiresUserFlag -- every user needs to track the status of corrections they
+      // themselves submitted (see /permintaan-koreksi), not just approvers. The
+      // Setujui/Tolak buttons on that page are what's actually gated by
+      // canApproveCorrections.
+      { labelKey: "nav.permintaanKoreksi", href: "/permintaan-koreksi", icon: FileWarning, module: "administrasi" },
       {
         labelKey: "nav.logAktivitas",
         href: "/log-aktivitas",

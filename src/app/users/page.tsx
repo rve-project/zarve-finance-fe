@@ -260,6 +260,7 @@ export default function UsersPage() {
               <th className="px-4 py-3 font-medium">{t("users.colAccountType")}</th>
               <th className="px-4 py-3 font-medium">{t("users.colModules")}</th>
               <th className="px-4 py-3 font-medium">{t("users.colActivityLog")}</th>
+              <th className="px-4 py-3 font-medium">{t("users.colCanApproveCorrections")}</th>
               <th className="px-4 py-3 text-right font-medium">{t("users.colActions")}</th>
             </tr>
           </thead>
@@ -297,6 +298,18 @@ export default function UsersPage() {
                       {u.canViewActivityLog ? t("users.activityLogGranted") : t("users.activityLogNotGranted")}
                     </button>
                   </td>
+                  <td className="px-4 py-2.5">
+                    <button
+                      onClick={() => run(() => api.updateUser(u.id, { canApproveCorrections: !u.canApproveCorrections }))}
+                      className={
+                        u.canApproveCorrections
+                          ? "rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700 hover:bg-emerald-100"
+                          : "rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500 hover:bg-zinc-200"
+                      }
+                    >
+                      {u.canApproveCorrections ? t("users.canApproveCorrectionsGranted") : t("users.canApproveCorrectionsNotGranted")}
+                    </button>
+                  </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     <button
                       onClick={() => openEditForm(u)}
@@ -324,7 +337,7 @@ export default function UsersPage() {
             })}
             {!loading && users.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-zinc-400">
+                <td colSpan={8} className="px-4 py-6 text-center text-zinc-400">
                   {t("users.empty")}
                 </td>
               </tr>

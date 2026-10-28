@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, Printer, Trash2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, ApiClientError } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { Account, JournalEntryDetail, SaleDocType, SaleDocumentDetail } from "@/lib/types";
@@ -13,6 +13,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { PrintDocumentData } from "@/components/print/DocumentPrintTemplate";
 import { PrintPreviewOverlay } from "@/components/print/PrintPreviewOverlay";
+import { AjukanKoreksiModal } from "@/components/ui/AjukanKoreksiModal";
 
 const DOC_TYPE_LABEL_KEY: Record<SaleDocType, string> = {
   quotation: "sales.docTypeQuotation",
@@ -57,6 +58,7 @@ export default function SaleDetailPage() {
   const [journal, setJournal] = useState<JournalEntryDetail | null>(null);
   const [journalLoading, setJournalLoading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showKoreksiModal, setShowKoreksiModal] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
 
@@ -130,6 +132,23 @@ export default function SaleDetailPage() {
     if (!doc) return;
     const reason = window.prompt(t("sales.confirmReject")) ?? undefined;
     await runAction(() => api.rejectSale(doc.id, reason));
+  }
+
+  async function handleApprove() {
+    if (!doc) return;
+    setBusy(true);
+    try {
+      await api.approveSale(doc.id);
+      await load();
+    } catch (err) {
+      if (err instanceof ApiClientError && err.status === 423) {
+        setShowKoreksiModal(true);
+      } else {
+        setError(err instanceof Error ? err.message : t("sales.errorAction"));
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleSubmitPayment() {
@@ -484,7 +503,7 @@ export default function SaleDetailPage() {
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => runAction(() => api.approveSale(doc.id))}
+                onClick={handleApprove}
                 className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
               >
                 {t("purchases.action.approve")}
@@ -599,6 +618,18 @@ export default function SaleDetailPage() {
       )}
 
       {printPreviewOpen && <PrintPreviewOverlay doc={printDoc} onClose={() => setPrintPreviewOpen(false)} />}
+
+      {showKoreksiModal && doc && (
+        <AjukanKoreksiModal
+          requestedDate={doc.documentDate}
+          onClose={() => setShowKoreksiModal(false)}
+          onSubmit={(reason) =>
+            api
+              .createKoreksiRequest({ resourceType: "sale_invoice_approval", resourceId: doc.id, requestedDate: doc.documentDate, reason })
+              .then(() => {})
+          }
+        />
+      )}
     </div>
   );
 }

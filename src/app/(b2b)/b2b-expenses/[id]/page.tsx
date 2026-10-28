@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Printer, Trash2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, ApiClientError } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { ExpenseDetail, JournalEntryDetail } from "@/lib/types";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { PrintDocumentData } from "@/components/print/DocumentPrintTemplate";
 import { PrintPreviewOverlay } from "@/components/print/PrintPreviewOverlay";
+import { AjukanKoreksiModal } from "@/components/ui/AjukanKoreksiModal";
 
 export default function ExpenseDetailPage() {
   const { t } = useLanguage();
@@ -24,6 +25,7 @@ export default function ExpenseDetailPage() {
   const [journalLoading, setJournalLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
+  const [showKoreksiModal, setShowKoreksiModal] = useState(false);
 
   useEffect(() => {
     api
@@ -55,7 +57,11 @@ export default function ExpenseDetailPage() {
       await api.deleteExpense(expense.id);
       router.push("/b2b-expenses");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("expenseDetail.errorDelete"));
+      if (err instanceof ApiClientError && err.status === 423) {
+        setShowKoreksiModal(true);
+      } else {
+        setError(err instanceof Error ? err.message : t("expenseDetail.errorDelete"));
+      }
       setDeleting(false);
     }
   }
@@ -269,6 +275,18 @@ export default function ExpenseDetailPage() {
       </div>
 
       {printPreviewOpen && <PrintPreviewOverlay doc={printDoc} onClose={() => setPrintPreviewOpen(false)} />}
+
+      {showKoreksiModal && (
+        <AjukanKoreksiModal
+          requestedDate={expense.expenseDate}
+          onClose={() => setShowKoreksiModal(false)}
+          onSubmit={(reason) =>
+            api
+              .createKoreksiRequest({ resourceType: "expense", resourceId: expense.id, requestedDate: expense.expenseDate, reason })
+              .then(() => {})
+          }
+        />
+      )}
     </div>
   );
 }

@@ -699,9 +699,78 @@ function GeneralTab() {
   );
 }
 
+function PeriodLockTab() {
+  const { t } = useLanguage();
+  const [periodLockDays, setPeriodLockDays] = useState(30);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    api
+      .settings()
+      .then((settings) => setPeriodLockDays(settings.periodLockDays))
+      .catch((err) => setError(err instanceof Error ? err.message : t("settings.loadError")))
+      .finally(() => setLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+    try {
+      await api.updateSettings({ periodLockDays });
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("settings.saveError"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div>
+      {loading ? (
+        <p className="text-sm text-zinc-400">{t("settings.loading")}</p>
+      ) : (
+        <form onSubmit={handleSave} className="max-w-2xl space-y-6">
+          {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+          {saved && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{t("settings.saved")}</p>}
+
+          <section className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
+            <h2 className="mb-1 text-sm font-semibold text-zinc-800">{t("settings.tabTutupBuku")}</h2>
+            <p className="mb-3 text-xs text-zinc-500">{t("settings.periodLockDaysDesc")}</p>
+            <label className="block max-w-xs text-sm">
+              <span className="mb-1 block text-zinc-600">{t("settings.periodLockDaysLabel")}</span>
+              <input
+                type="number"
+                min={1}
+                value={periodLockDays}
+                onChange={(e) => setPeriodLockDays(Number(e.target.value) || 1)}
+                className="w-full rounded-lg border border-zinc-200 px-3.5 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </label>
+          </section>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {saving ? t("settings.saving") : t("settings.savePengaturan")}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const { t } = useLanguage();
-  const [tab, setTab] = useState<"general" | "taxes" | "banks" | "paymentTerms" | "fixedAssetTypes">("general");
+  const [tab, setTab] = useState<"general" | "taxes" | "banks" | "paymentTerms" | "fixedAssetTypes" | "periodLock">("general");
 
   const TAB_LABEL_KEY = {
     general: "settings.tabUmum",
@@ -709,6 +778,7 @@ export default function SettingsPage() {
     banks: "b2bSettings.tabBanks",
     paymentTerms: "b2bSettings.tabPaymentTerms",
     fixedAssetTypes: "b2bSettings.tabFixedAssetTypes",
+    periodLock: "settings.tabTutupBuku",
   } as const;
 
   return (
@@ -716,7 +786,7 @@ export default function SettingsPage() {
       <PageHeader title={t("nav.pengaturan")} subtitle={t("settings.subtitle")} />
 
       <div className="mb-4 flex gap-1 border-b border-zinc-200">
-        {(["general", "taxes", "banks", "paymentTerms", "fixedAssetTypes"] as const).map((tabKey) => (
+        {(["general", "taxes", "banks", "paymentTerms", "fixedAssetTypes", "periodLock"] as const).map((tabKey) => (
           <button
             key={tabKey}
             type="button"
@@ -735,6 +805,7 @@ export default function SettingsPage() {
       {tab === "banks" && <BanksTab />}
       {tab === "paymentTerms" && <PaymentTermsTab />}
       {tab === "fixedAssetTypes" && <FixedAssetTypesTab />}
+      {tab === "periodLock" && <PeriodLockTab />}
     </div>
   );
 }

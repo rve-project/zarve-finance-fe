@@ -259,6 +259,8 @@ export interface User {
   role: UserRole;
   aktif: boolean;
   canViewActivityLog: boolean;
+  /** "Pihak berwenang" who can approve/reject a Permintaan Koreksi. */
+  canApproveCorrections: boolean;
   /** Per-user menu restriction. Null = full access (default, every existing user). */
   allowedModules: string[] | null;
 }
@@ -493,6 +495,33 @@ export interface AppSettings {
   autoCreatePayment: boolean;
   ppnEnabled: boolean;
   ppnRate: number;
+  /** Tutup Buku: a transaction older than this many days can no longer write to the
+   * ledger directly -- see KoreksiRequest below. */
+  periodLockDays: number;
+}
+
+// Tutup Buku (close period) -- see rve-finance-be's utils/periodLock.ts for the
+// enforcement side. A write older than AppSettings.periodLockDays is blocked (HTTP 423)
+// unless an approved, unused request like this exists for it.
+export type KoreksiResourceType = "journal_entry" | "expense" | "fixed_asset_revaluation" | "sale_invoice_approval" | "purchase_invoice_approval";
+export type KoreksiStatus = "pending_approval" | "approved" | "rejected";
+
+export interface KoreksiRequest {
+  id: number;
+  businessUnit: BusinessUnit;
+  resourceType: KoreksiResourceType;
+  resourceId: number | null;
+  requestedDate: string;
+  reason: string;
+  status: KoreksiStatus;
+  requestedBy: number;
+  requestedByName: string | null;
+  approvedBy: number | null;
+  approvedByName: string | null;
+  approvedAt: string | null;
+  rejectedReason: string | null;
+  usedAt: string | null;
+  createdAt: string;
 }
 
 // Manual journal entries -- accounting adjustments/corrections that don't come from

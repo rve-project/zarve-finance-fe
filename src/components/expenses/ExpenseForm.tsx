@@ -3,13 +3,14 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, ApiClientError } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
 import { Account, Contact, CreateExpenseInput, ExpenseDetail, TaxCode } from "@/lib/types";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { QuickAddContactModal } from "@/components/ui/QuickAddContactModal";
+import { AjukanKoreksiModal } from "@/components/ui/AjukanKoreksiModal";
 
 interface LineDraft {
   accountId: string;
@@ -87,6 +88,7 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showKoreksiModal, setShowKoreksiModal] = useState(false);
   // Non-null (even "") while the quick-add-vendor modal is open, pre-filled with whatever
   // the user had already typed into the Penerima search box.
   const [quickAddContactQuery, setQuickAddContactQuery] = useState<string | null>(null);
@@ -175,7 +177,11 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
         })),
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("expenseNew.errorSave"));
+      if (err instanceof ApiClientError && err.status === 423) {
+        setShowKoreksiModal(true);
+      } else {
+        setError(err instanceof Error ? err.message : t("expenseNew.errorSave"));
+      }
       setSubmitting(false);
     }
   }
@@ -432,6 +438,16 @@ export function ExpenseForm({ initial, cancelHref, submitLabel, savingLabel, onS
           setContacts((prev) => [...prev, created]);
           setContactId(String(created.id));
         }}
+      />
+    )}
+
+    {showKoreksiModal && initial && (
+      <AjukanKoreksiModal
+        requestedDate={date}
+        onClose={() => setShowKoreksiModal(false)}
+        onSubmit={(reason) =>
+          api.createKoreksiRequest({ resourceType: "expense", resourceId: initial.id, requestedDate: date, reason }).then(() => {})
+        }
       />
     )}
     </>

@@ -13,6 +13,8 @@ import {
   AgedReceivablesResult,
   AppSettings,
   BalanceSheetResult,
+  KoreksiRequest,
+  KoreksiResourceType,
   ReportUnit,
   BankStatementImportResult,
   CashBankAccount,
@@ -229,6 +231,7 @@ export const api = {
       name?: string;
       aktif?: boolean;
       canViewActivityLog?: boolean;
+      canApproveCorrections?: boolean;
       password?: string;
       allowedModules?: string[] | null;
     }
@@ -397,6 +400,27 @@ export const api = {
   reverseJournalEntry: (id: number) => post<{ id: number }>(`/journal-entries/${id}/reverse`),
   reverseJournalEntryForUnit: (unit: "zarve" | "b2b", id: number) =>
     postForUnit<{ id: number }>(`/journal-entries/${id}/reverse`, undefined, unit),
+
+  // Plain (ambient business-unit header) variants -- for the B2B-only screens
+  // (Pengeluaran, Aset Tetap, Sales/Purchases) that already rely on the global unit
+  // rather than an explicit toggle.
+  koreksiRequests: () => get<KoreksiRequest[]>("/koreksi-requests"),
+  createKoreksiRequest: (data: { resourceType: KoreksiResourceType; resourceId: number | null; requestedDate: string; reason: string }) =>
+    post<KoreksiRequest>("/koreksi-requests", data),
+  approveKoreksiRequest: (id: number) => post<KoreksiRequest>(`/koreksi-requests/${id}/approve`),
+  rejectKoreksiRequest: (id: number, reason?: string) => post<KoreksiRequest>(`/koreksi-requests/${id}/reject`, { reason }),
+
+  // ForUnit variants -- for Jurnal Manual, which (like General Ledger/reports) is the
+  // one screen usable from either business unit via its own ReportUnitToggle.
+  koreksiRequestsForUnit: (unit: "zarve" | "b2b") => getForUnit<KoreksiRequest[]>("/koreksi-requests", unit),
+  createKoreksiRequestForUnit: (
+    unit: "zarve" | "b2b",
+    data: { resourceType: KoreksiResourceType; resourceId: number | null; requestedDate: string; reason: string }
+  ) => postForUnit<KoreksiRequest>("/koreksi-requests", data, unit),
+  approveKoreksiRequestForUnit: (unit: "zarve" | "b2b", id: number) =>
+    postForUnit<KoreksiRequest>(`/koreksi-requests/${id}/approve`, undefined, unit),
+  rejectKoreksiRequestForUnit: (unit: "zarve" | "b2b", id: number, reason?: string) =>
+    postForUnit<KoreksiRequest>(`/koreksi-requests/${id}/reject`, { reason }, unit),
 
   vendorBills: (params: { vendorId?: number; page?: number; limit?: number } = {}) =>
     get<VendorBillPage>(`/vendor-bills${qs(params)}`),

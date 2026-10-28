@@ -20,6 +20,7 @@ import { dictExpenses } from "./i18n/dict.expenses";
 import { dictPurchases } from "./i18n/dict.purchases";
 import { dictSales } from "./i18n/dict.sales";
 import { dictAuditAndValidation } from "./i18n/dict.auditAndValidation";
+import { dictKoreksi } from "./i18n/dict.koreksi";
 import { dictQuickAdd } from "./i18n/dict.quickAdd";
 import { dictDocumentSettings } from "./i18n/dict.documentSettings";
 
@@ -49,6 +50,7 @@ const dict: Record<string, Record<Lang, string>> = {
   ...dictPurchases,
   ...dictSales,
   ...dictAuditAndValidation,
+  ...dictKoreksi,
   ...dictQuickAdd,
   ...dictDocumentSettings,
 

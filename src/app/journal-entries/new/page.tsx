@@ -4,13 +4,14 @@ import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, ApiClientError } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatRupiah } from "@/lib/format";
 import { Account, BusinessUnit } from "@/lib/types";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { AjukanKoreksiModal } from "@/components/ui/AjukanKoreksiModal";
 
 interface LineDraft {
   accountId: string;
@@ -40,6 +41,7 @@ function NewJournalEntryPageInner() {
   const [lines, setLines] = useState<LineDraft[]>([emptyLine(), emptyLine()]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showKoreksiModal, setShowKoreksiModal] = useState(false);
 
   useEffect(() => {
     api.accountsForUnit(unit).then(setAccounts).catch(() => {});
@@ -87,7 +89,11 @@ function NewJournalEntryPageInner() {
       });
       router.push(`/journal-entries?unit=${unit}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("journalEntries.error.saveFailed"));
+      if (err instanceof ApiClientError && err.status === 423) {
+        setShowKoreksiModal(true);
+      } else {
+        setError(err instanceof Error ? err.message : t("journalEntries.error.saveFailed"));
+      }
       setSubmitting(false);
     }
   }
@@ -220,6 +226,18 @@ function NewJournalEntryPageInner() {
           </button>
         </div>
       </form>
+
+      {showKoreksiModal && (
+        <AjukanKoreksiModal
+          requestedDate={date}
+          onClose={() => setShowKoreksiModal(false)}
+          onSubmit={(reason) =>
+            api
+              .createKoreksiRequestForUnit(unit, { resourceType: "journal_entry", resourceId: null, requestedDate: date, reason })
+              .then(() => {})
+          }
+        />
+      )}
     </div>
   );
 }

@@ -2,9 +2,10 @@
 
 import { Fragment, FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, ApiClientError } from "@/lib/api";
 import { useLanguage } from "@/lib/i18n";
 import { formatDate, formatRupiah } from "@/lib/format";
+import { AjukanKoreksiModal } from "@/components/ui/AjukanKoreksiModal";
 import {
   Account,
   ActiveFixedAsset,
@@ -198,6 +199,7 @@ function RevalueForm({ asset, onDone, onCancel }: { asset: ActiveFixedAsset; onD
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showKoreksiModal, setShowKoreksiModal] = useState(false);
 
   useEffect(() => {
     api.accounts().then(setAccounts).catch(() => {});
@@ -216,7 +218,11 @@ function RevalueForm({ asset, onDone, onCancel }: { asset: ActiveFixedAsset; onD
       });
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("fixedAssets.revalue.errorSave"));
+      if (err instanceof ApiClientError && err.status === 423) {
+        setShowKoreksiModal(true);
+      } else {
+        setError(err instanceof Error ? err.message : t("fixedAssets.revalue.errorSave"));
+      }
       setSubmitting(false);
     }
   }
@@ -275,6 +281,18 @@ function RevalueForm({ asset, onDone, onCancel }: { asset: ActiveFixedAsset; onD
             </button>
           </div>
         </form>
+
+        {showKoreksiModal && (
+          <AjukanKoreksiModal
+            requestedDate={revaluationDate}
+            onClose={() => setShowKoreksiModal(false)}
+            onSubmit={(reason) =>
+              api
+                .createKoreksiRequest({ resourceType: "fixed_asset_revaluation", resourceId: asset.id, requestedDate: revaluationDate, reason })
+                .then(() => {})
+            }
+          />
+        )}
       </td>
     </tr>
   );
